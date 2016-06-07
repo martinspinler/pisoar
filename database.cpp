@@ -111,12 +111,12 @@ bool Database::open(QDir dir)
     }
 
     /* Parse layouts */
-    QJsonObject layouts = json["layouts"].toObject();
-    for(QJsonObject::const_iterator i = layouts.constBegin(); i != layouts.constEnd(); i++ ) {
+    QJsonArray layouts = json["layouts"].toArray();
+    for(QJsonArray::const_iterator i = layouts.constBegin(); i != layouts.constEnd(); i++ ) {
         LayoutPage *l = new LayoutPage;
-        l->name = i.key();
+        l->name = (*i).toObject()["name"].toString();
 
-        QJsonArray items = i.value().toArray();
+        QJsonArray items = (*i).toObject()["items"].toArray();
         for(QJsonArray::const_iterator it = items.constBegin(); it != items.constEnd(); it++ ) {
             QJsonObject o = (*it).toObject();
             LayoutItem *li = new LayoutItem;
@@ -163,7 +163,7 @@ void Database::save()
     }
 
     /* Parse layouts */
-    QJsonObject layouts;
+    QJsonArray layouts;
     for(QList<LayoutPage*>::const_iterator i = list_layouts.constBegin(); i != list_layouts.constEnd(); i++) {
         QJsonObject f;
         QJsonArray items;
@@ -178,7 +178,9 @@ void Database::save()
             item["pointy"] = (*it)->pos.y();
             items.append(item);
         }
-        layouts[(*i)->name] = items;
+        f["name"] = (*i)->name;
+        f["items"] = items;
+        layouts.append(f);
     }
 
     QJsonObject json;
@@ -193,6 +195,8 @@ void Database::save()
 }
 Database::ObjectItem* Database::createObject(QString name)
 {
+    if(name.isEmpty() || findObjectByName(name))
+        return NULL;
     QStandardItem * it = new QStandardItem(icon_0, name);
     ObjectItem * i = new ObjectItem;
     i->name = name;
@@ -252,6 +256,22 @@ Database::LayoutItem* Database::createItem(LayoutPage *page, QString name)
     page->list_items.append(i);
     object_model.findItems(i->name).first()->setIcon(icon_done);
     return i;
+}
+void Database::removeItem(LayoutPage *page, LayoutItem * item)
+{
+    page->list_items.removeAll(item);
+
+    QIcon i = icon_image;
+    switch(findObjectByName(item->name)->views.size()) {
+        case 0: i = icon_0; break;
+        case 1: i = icon_1; break;
+        case 2: i = icon_2; break;
+    }
+    for(int x = 0; x < list_layouts.size(); x++) {
+        if(list_layouts[x]->list_items.contains(item))
+            return;
+    }
+    object_model.findItems(item->name).first()->setIcon(i);
 }
 Database::ImageFile* Database::getFileByName(QString name)
 {

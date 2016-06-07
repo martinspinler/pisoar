@@ -85,7 +85,8 @@ public:
 
     ObjectView *createView(ObjectItem* item, QString filename, QPoint pt);
 
-    LayoutItem *createItem(LayoutPage* page, QString name);
+    LayoutItem* createItem(LayoutPage *page, QString name);
+    void removeItem(LayoutPage* page, LayoutItem * item);
 
     ImageFile * createFile(QString name);
     ImageFile * findFileByName(QString name);

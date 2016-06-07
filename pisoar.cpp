@@ -62,7 +62,7 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
     box_main->addWidget(image, 1);
     box_main->addLayout(box_database);
 
-    connect(fl_list,    &QListWidget::currentTextChanged, this, &Pisoar::fl_list_itemSelectionChanged);
+    connect(fl_list->selectionModel(),    &QItemSelectionModel::selectionChanged, this, &Pisoar::fl_list_itemSelectionChanged);
     connect(fl_list,    &QListWidget::itemActivated,      this, &Pisoar::fl_list_itemActivated);
     connect(fl_none,    &QPushButton::clicked, this, &Pisoar::fl_setFileFlag_clicked);
     connect(fl_wip,     &QPushButton::clicked, this, &Pisoar::fl_setFileFlag_clicked);
@@ -75,9 +75,10 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
     connect(db_calib,   &QPushButton::clicked, this, &Pisoar::db_calib_clicked);
     connect(db_rename,  &QPushButton::clicked, this, &Pisoar::db_rename_clicked);
     connect(db_name,    &QLineEdit::returnPressed, this, &Pisoar::db_new_clicked);
-    connect(db_list->selectionModel(),  &QItemSelectionModel::selectionChanged, this, &Pisoar::db_list_itemSelectionChanged);
-    connect(db_list,    &QListView::activated, this, &Pisoar::db_list_activated);//selectionModel(),  &QItemSelectionModel::selectionChanged, this, &Pisoar::db_list_itemSelectionChanged);
 
+    //connect((QStandardItemModel*)db_list->model(),    &QStandardItemModel::itemChanged, this, &Pisoar::db_list_itemChanged);
+    connect(db_list->selectionModel(),    &QItemSelectionModel::selectionChanged, this, &Pisoar::db_list_selectionChanged);
+    connect(db_list,    &QListView::activated, this, &Pisoar::db_list_activated);
 
     connect(image,    &Image::calibrateDone, this, &Pisoar::onCalibrateDone);
     connect(image,    &Image::objectSelected,this, &Pisoar::onObjectSelected);
@@ -99,19 +100,30 @@ void Pisoar::fl_list_itemActivated()
         fl_list_fill();
     }
 }
-void Pisoar::fl_list_itemSelectionChanged(const QString & text)
+void Pisoar::fl_list_itemSelectionChanged(const QItemSelection &selection)
 {
-    if(text.isEmpty())
+    fl_filename.clear();
+    fl_none->setDisabled(true);
+    fl_wip->setDisabled(true);
+    fl_done->setDisabled(true);
+
+    if(fl_list->selectedItems().isEmpty())
         return;
-    if(QFileInfo(dir_list.filePath(text)).isFile()) {
-        fl_filename = text;
+
+    fl_filename = fl_list->selectedItems().first()->text();
+
+    if(QFileInfo(dir_list.filePath(fl_filename)).isFile()) {
+        fl_none->setEnabled(true);
+        fl_wip->setEnabled(true);
+        fl_done->setEnabled(true);
+
         image->loadImage(dir_list.filePath(fl_filename));
 
         Database::ImageFile * file = db->findFileByName(dir_list.filePath(fl_filename));
         if(file == NULL || file->scale == 0)
             fl_info->setText(QString("Bez měřítka"));
         else
-            fl_info->setText(QString("Měřítko: ") + QString::number(file->scale, 'f', 2));
+            fl_info->setText(QString("Měřítko: ") + QString::number(file->scale, 'f', 2) + QString(" px/cm"));
     }
     else
         fl_filename.clear();
@@ -120,18 +132,22 @@ void Pisoar::fl_setFileFlag_clicked()
 {
     int flag = sender() == fl_wip ? 1: (sender() == fl_done ? 2 : 0);
 
-    QList <QListWidgetItem*> items = fl_list->selectedItems();
-    if(items.isEmpty())
+    if(fl_list->selectedItems().isEmpty())
         return;
-    QString name = items.first()->text();
+
+    QString name = fl_list->selectedItems().first()->text();
     QString path = dir_list.filePath(name);
     db->getFileByName(path)->flags = flag;
 
-    items.first()->setIcon(flag == 0 ? db->icon_image : (flag == 1 ? db->icon_wip : db->icon_done));
-    if(flag == 2 && !fl_show->isChecked())
-        delete fl_list->takeItem(fl_list->currentRow());
+    fl_list->selectedItems().first()->setIcon(flag == 0 ? db->icon_image : (flag == 1 ? db->icon_wip : db->icon_done));
+
+    int currentRow = fl_list->currentRow();
+    if(flag == 2 && !fl_show->isChecked()) {
+        delete fl_list->takeItem(currentRow);
+        fl_list->setCurrentRow(currentRow);
+    }
     else
-        fl_list->setCurrentRow(fl_list->currentRow()+1);
+        fl_list->setCurrentRow(currentRow+1);
 }
 void Pisoar::fl_show_stateChanged(int state)
 {
@@ -162,11 +178,8 @@ void Pisoar::fl_list_fill()
     dir.setNameFilters(filter);
     QStringList files = dir.entryList(QDir::Files);
     for(QStringList::const_iterator i = files.constBegin(); i != files.constEnd(); i++) {
-        int flags = 0;
-        Database::ImageFile * file = db->findFileByName(dir_list.filePath(*i));
-        if(file)
-            flags = file->flags;
-
+        Database::ImageFile * file = db->findFileByName(dir.filePath(*i));
+        int flags = file ? file->flags : 0;
         if(flags == 2 && !fl_show->isChecked())
             continue;
         fl_list->addItem(new QListWidgetItem(flags == 0 ? db->icon_image: (flags == 1 ? db->icon_wip : db->icon_done), *i));
@@ -179,17 +192,18 @@ void Pisoar::db_save_clicked()
 
 void Pisoar::db_new_clicked()
 {
-    QString text = db_name->text();
-    if(!text.isEmpty() && db->findObjectByName(text) == NULL) {
-        Database::ObjectItem * i = db->createObject(text);
+    Database::ObjectItem * i = db->createObject(db_name->text());
+    if(i) {
         db_list->selectionModel()->select(db->object_model.indexFromItem(i->it), QItemSelectionModel::ClearAndSelect);
+        //if(db_list->selectionModel()->selectedRows().size())
+        db_list->scrollTo(db_list->selectionModel()->selectedRows().first());
     }
     else {
         QMessageBox mb(QMessageBox::Warning, "Špatné jméno", "Objekt s tímto jménem nelze vytvořit.");
         mb.exec();
     }
 }
-void Pisoar::db_rename_clicked(){
+void Pisoar::db_rename_clicked() {
     QString text = db_name->text();
     if(!text.isEmpty() && db->findObjectByName(text) == NULL) {
         QModelIndexList i = db_list->selectionModel()->selectedIndexes();
@@ -218,6 +232,8 @@ void Pisoar::db_assign_clicked()
 {
     assign_mask();
     db_list->selectionModel()->select(db->object_model.index(db_list->selectionModel()->selectedRows().first().row() + 1, 0), QItemSelectionModel::ClearAndSelect);
+    if(db_list->selectionModel()->selectedRows().size())
+        db_list->scrollTo(db_list->selectionModel()->selectedRows().first());
 }
 void Pisoar::assign_mask()
 {
@@ -259,9 +275,35 @@ void Pisoar::db_list_activated(const QModelIndex &index)
     assign_mask();
 }
 
-void Pisoar::db_list_itemSelectionChanged(const QItemSelection &selection)
+void Pisoar::db_list_selectionChanged(const QItemSelection &selection)
 {
     db_info_update();
+}
+void Pisoar::db_list_itemChanged(QStandardItem * item)
+{
+    //db_info_update();
+    QString text = db_name->text();
+    if(0 && !text.isEmpty() && db->findObjectByName(text) == NULL) {
+        QModelIndexList i = db_list->selectionModel()->selectedIndexes();
+        if(i.isEmpty())
+            return;
+
+        QString name = db->object_model.item(i.first().row())->text();
+        Database::ObjectItem * item = db->findObjectByName(name);
+
+        if(item->views.size()) {
+            QMessageBox mb(QMessageBox::Warning, "Špatné jméno", "Objekt už má přiřazeny pohledy.");
+            mb.exec();
+        }else
+        {
+            db->object_model.item(i.first().row())->setText(text);
+            item->name = text;
+        }
+    }
+    else {
+        QMessageBox mb(QMessageBox::Warning, "Špatné jméno", "Objekt nemůže mít takové jméno.");
+        mb.exec();
+    }
 }
 void Pisoar::db_info_update()
 {
@@ -271,8 +313,16 @@ void Pisoar::db_info_update()
     }
     QStandardItem * i = db->object_model.itemFromIndex(db_list->selectionModel()->selectedIndexes().first());
     Database::ObjectItem * item = db->findObjectByName(i->text());
-    QString text = QString("Pohledy: ") + QString::number(item->views.size());
-    for(int j = 0; j < item->views.size(); j++)
+    QString text = "";
+    int viewCount = item->views.size();
+    if(viewCount) {
+        Database::ImageFile *file = db->findFileByName(item->views.first()->filename);
+        if(!file || file->scale < 1)
+            text += "BEZ MĚŘÍTKA! ";
+    }
+
+    text += QString("Pohledy: ") + QString::number(viewCount);
+    for(int j = 0; j < viewCount; j++)
         text += QString(", ") + item->views[j]->filename;
 
     db_info->setText(text);

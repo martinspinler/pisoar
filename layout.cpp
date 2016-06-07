@@ -494,7 +494,7 @@ void Layout::keyPressEvent(QKeyEvent * event)
     if(event->key() == Qt::Key_Delete) {
         for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
             Database::LayoutItem * item = (Database::LayoutItem *) (*i)->data(0).value<void *>();
-            currentLayout->list_items.removeAll(item);
+            db->removeItem(currentLayout, item);
         }
         loadPage(currentLayout);
     }

@@ -66,14 +66,15 @@ public:
     Pisoar(Database * db, QWidget *parent = 0);
     ~Pisoar();
 
-    void fl_list_itemSelectionChanged(const QString &str);
+    void fl_list_itemSelectionChanged(const QItemSelection &selection);
     void fl_list_itemActivated();
     void fl_list_fill();
     void fl_show_stateChanged(int state);
     void fl_setFileFlag_clicked();
 
-    void db_list_itemSelectionChanged(const QItemSelection &selection);
     void db_list_activated(const QModelIndex &index);
+    void db_list_itemChanged(QStandardItem* item);
+    void db_list_selectionChanged(const QItemSelection &selection);
     void db_list_fill();
 
     void db_save_clicked();
