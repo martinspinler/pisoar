@@ -3,6 +3,7 @@
 #include <QPointF>
 #include <QBitmap>
 #include <QTransform>
+#include <QGraphicsTextItem>
 #include <stack>
 
 #include <stdint.h>
@@ -103,22 +104,39 @@ void Image::mouseReleaseEvent(QMouseEvent *event)
         float calibrated_length = sqrt(pow(posf.x(), 2) + pow(posf.y(), 2));
         emit calibrateDone(calibrated_length);
     }
-
+}
+void Image::clear()
+{
+    resetTransform();
+    scene.clear();
 }
 void Image::loadImage(QString filename)
 {
-    float x, y;
-    resetTransform();
-    scene.clear();
-    if(filename.length()) {
-        pixmap.load(filename);
+    clear();
+    if(pixmap.load(filename)) {
         scene.addPixmap(pixmap);
-        x = float(size().width())  / pixmap.size().width();
-        y = float(size().height()) / pixmap.size().height();
+        float x = float(size().width())  / pixmap.size().width();
+        float y = float(size().height()) / pixmap.size().height();
         scale(min(x,y), min(x,y));
         //translate(x/2, y/2);
     }
 }
+void Image::addPoint(QPoint pos, QString name)
+{
+    QPen pen(Qt::red);
+    pen.setWidth(5);
+
+    QBrush brush(Qt::black);
+
+    QPoint offset(40,40);
+    scene.addEllipse(QRect(pos - offset, pos + offset), pen, brush);
+    QGraphicsTextItem* t = scene.addText(name);
+    QFont f = t->font();
+    f.setPixelSize(72);
+    t->setFont(f);
+    t->setPos(pos + QPoint(-t->boundingRect().width()/2, 50));
+}
+
 QImage Image::findEdgeMask(int x, int y)
 {
     int width = pixmap.size().width();

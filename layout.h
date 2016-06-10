@@ -6,17 +6,63 @@
 #include <QGraphicsView>
 #include <QGraphicsItem>
 #include <QGraphicsItemGroup>
+#include <QGraphicsTextItem>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsLineItem>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPointF>
 #include <QWidget>
-#include <QGraphicsTextItem>
+
 #include "database.h"
 
 
 class Layout : public QGraphicsView
 {  
     Q_OBJECT
+
+    class Ruler : public QGraphicsItemGroup {
+        Layout * l;
+    public:
+        Ruler(Layout * layout);
+        void updateObject(float scale);
+    };
+
+    class LayoutView: public QGraphicsItemGroup {    
+    protected:
+        Layout * l;
+        float childWidth;
+        float childHeight;
+        float childPadding;
+    public:
+        LayoutView(Database::LayoutItem*item, Layout *l);
+        virtual void updateObject();
+
+        Database::LayoutItem * item;
+        QGraphicsRectItem * rrect;
+        Ruler             * rruler;
+        QGraphicsRectItem * rselect;
+        QGraphicsTextItem * rscale;
+        QGraphicsTextItem * rindex;
+    };
+
+    class TopSideView: public LayoutView{
+    public:
+        QGraphicsPixmapItem * rtop;
+        QGraphicsPixmapItem * rside;
+        QGraphicsLineItem * rlinetop;
+        QGraphicsLineItem * rlinebot;
+    public:
+        TopSideView(Database::LayoutItem*item, Layout *l);
+        void updateObject();
+    };
+    class TopView: public LayoutView{
+    public:
+        QGraphicsPixmapItem * rtop;
+    public:
+        TopView(Database::LayoutItem*item, Layout *l);
+        void updateObject();
+    };
 
     Database * db;
     QBrush blackbrush;
@@ -25,33 +71,30 @@ class Layout : public QGraphicsView
 
     QPointF mouse_down_pos;
     QPointF mouse_move_pos;
-    //QGraphicsItem* selected;
     bool isMoving;
 
-    QList<QGraphicsItem*> objects;
-    QList<QGraphicsItem*> selected;
+    QList<LayoutView*> objects;
+    QList<LayoutView*> selected;
 
     QGraphicsScene *scene;
     QGraphicsTextItem *text_objectList;
 
     Database::LayoutPage * currentLayout;
 
-    QGraphicsItemGroup * findGroupByItem(Database::LayoutItem * item);
+    LayoutView * findViewByItem(Database::LayoutItem * item);
 
 public:
     Layout(Database * database);
 
+    void clearLayout();
     void loadPage(Database::LayoutPage * page);
     void exportToImage(QString filename);
 
-    QGraphicsItemGroup* createObject(Database::LayoutItem *item);
+    LayoutView* createObject(Database::LayoutItem *item);
     void addNewObject(Database::LayoutItem *item);
-    void recomputeObject(Database::LayoutItem* group);
-    void recomputeObject(QGraphicsItemGroup * group);
+    void updateObject(Database::LayoutItem* group);
 
-    QGraphicsItemGroup* addRuler();
-    void updateRuler(QGraphicsItemGroup* ruler, float scale);
-
+    void updateText();
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
@@ -59,10 +102,11 @@ public:
 
     void selectNone();
     void selectObject(QString name, bool sel = true);
-    void selectObject(QPointF pos, bool sel = true);
-    void selectObject(QGraphicsItem *item, bool sel = true);
-    void selectToggle(QGraphicsItem *item);
+    void selectObject(LayoutView *item, bool sel = true);
+    void selectToggle(LayoutView *item);
 
+    void setSelectedBorder(bool border);
+    void setSelectedRuler(bool ruler);
 
     void keyPressEvent(QKeyEvent * event);
 
@@ -79,6 +123,7 @@ public:
     float default_scale;
     int offsetx;
     int offsety;
+    int alignment;
 
 signals:
     void selectionChanged();

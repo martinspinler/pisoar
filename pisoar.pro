@@ -16,14 +16,16 @@ SOURCES += main.cpp\
     database.cpp \
     kasuar.cpp \
     layout.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    settings.cpp
 
 HEADERS  += pisoar.h \
     image.h \
     database.h \
     kasuar.h \
     layout.h \
-    mainwindow.h
+    mainwindow.h \
+    settings.h
 
 RESOURCES += \
     resources.qrc

@@ -1,6 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include <QObject>
 #include <QDir>
 #include <QString>
 #include <QPoint>
@@ -12,9 +13,9 @@
 #include <QStringList>
 #include <QStandardItemModel>
 
-
-class Database
+class Database : public QObject
 {
+    Q_OBJECT
 
 public:
     struct ImageFile {
@@ -28,24 +29,27 @@ public:
     };
     struct ObjectItem {
         QString name;
-        //int count;
         QList<ObjectView*> views;
         QStandardItem *it;
     };
     struct LayoutItem {
         QString name;
+        QPointF pos;
+        float scale;
         bool ruler;
         bool border;
-        float scale;
-        QPointF pos;
+        int type;
     };
     struct LayoutPage {
         QString name;
         QList<LayoutItem*> list_items;
     };
 
+    class ObjectItemModel : public QStandardItemModel {
+        virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+    };
+
 private:
-    //QJsonObject  json;
     QDir dir_base;
     QDir dir_items;
     QDir dir_layouts;
@@ -54,8 +58,9 @@ private:
     QList <ObjectItem*> list_objects;
     QList <LayoutPage*> list_layouts;
 
-public:
+    bool bIsModified;
 
+public:
     QIcon icon_up;
     QIcon icon_folder;
     QIcon icon_wip;
@@ -65,12 +70,13 @@ public:
     QIcon icon_1;
     QIcon icon_2;
 
-    QStandardItemModel object_model;
+    ObjectItemModel object_model;
     QStandardItemModel layout_model;
 
     Database();
-    ~Database() { clear(); }
+    ~Database() {clear();}
 
+    bool  isModified() {return bIsModified;}
     bool  create(QDir dir);
     bool  open(QDir dir);
     void  save();
@@ -81,18 +87,25 @@ public:
     const QDir & getDirLayouts() {return dir_layouts;}
 
     ObjectItem *createObject(QString name);
+    ObjectItem *getObject(int i);
     ObjectItem *findObjectByName(QString name);
+    bool        removeObject(QString name);
+    bool        cleanObject(QString name);
 
     ObjectView *createView(ObjectItem* item, QString filename, QPoint pt);
 
     LayoutItem* createItem(LayoutPage *page, QString name);
-    void removeItem(LayoutPage* page, LayoutItem * item);
+    void        removeItem(LayoutPage* page, LayoutItem * item);
 
     ImageFile * createFile(QString name);
     ImageFile * findFileByName(QString name);
     ImageFile * getFileByName(QString name);
+    const QList<QPair<QString, QPoint>> getPointsByFile(QString file);
 
+    LayoutPage* createLayout(QString name);
     LayoutPage* getLayoutByName(QString name);
+
+    void        object_itemChanged(QStandardItem * item);
 };
 
 #endif // DATABASE_H

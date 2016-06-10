@@ -18,30 +18,24 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
     layout          = new Layout(db);
 
     layout_border   = new QCheckBox("Zobrazit okraj");
-    layout_ruler    = new QCheckBox("Zobrazit pravítko");
 
-    layout_prev     = new QPushButton("<<");
-    layout_next     = new QPushButton(">>");
+    layout_ruler    = new QCheckBox("Zobrazit pravítko");
+    layout_add      = new QPushButton("+");
 
     layout_list     = new QListView();
     layout_list->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     layout_list->setModel(&db->layout_model);
-
 
     box_database = new QVBoxLayout();
     box_database->addWidget(db_list);
     box_database->addWidget(db_add);
     box_database->addWidget(db_save);
 
-    box_layout_prevnext = new QHBoxLayout();
-    box_layout_prevnext->addWidget(layout_prev);
-    box_layout_prevnext->addWidget(layout_next);
-
     box_layout = new QVBoxLayout();
     box_layout->addWidget(layout_list);
     box_layout->addWidget(layout_border);
     box_layout->addWidget(layout_ruler);
-    box_layout->addLayout(box_layout_prevnext);
+    box_layout->addWidget(layout_add);
 
     box_main = new QHBoxLayout();
     box_main->addLayout(box_database);
@@ -55,8 +49,7 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
     connect(layout_border,  &QCheckBox::toggled,    this, &Kasuar::layout_border_toggled);
     connect(layout_ruler,   &QCheckBox::toggled,    this, &Kasuar::layout_ruler_toggled);
 
-    connect(layout_next,    &QPushButton::clicked,  this, &Kasuar::layout_nav_clicked);
-    connect(layout_prev,    &QPushButton::clicked,  this, &Kasuar::layout_nav_clicked);
+    connect(layout_add,     &QPushButton::clicked,  this, &Kasuar::layout_add_clicked);
     connect(layout_list->selectionModel(),  &QItemSelectionModel::selectionChanged, this, &Kasuar::layout_itemSelectionChanged);
     connect(layout,         &Layout::selectionChanged, this, &Kasuar::layout_selectionChanged);
 
@@ -66,72 +59,52 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
 }
 void Kasuar::db_activated(const QModelIndex &index)
 {
+    Q_UNUSED(index);
     db_add_clicked();
-    /*QString name = db->object_model.itemFromIndex(index)->text();
-    layout->addNewObject(db->createItem(currentLayout, name));*/
 }
 void Kasuar::db_add_clicked()
 {
-    QItemSelectionModel *m = db_list->selectionModel();
-    if(!currentLayout || m->selectedIndexes().isEmpty())
+    QModelIndex index = db_list->currentIndex();
+    if(!currentLayout || !index.isValid())
         return;
-    QString name = db->object_model.itemFromIndex(m->selectedIndexes().first())->text();
+    QString name = db->object_model.itemFromIndex(index)->text();
     layout->addNewObject(db->createItem(currentLayout, name));
-    m->select(db->object_model.index(m->selectedIndexes().first().row() + 1, 0), QItemSelectionModel::ClearAndSelect);
+    db_list->setCurrentIndex(db->object_model.index(index.row() + 1, 0));
 }
-
 void Kasuar::db_save_clicked()
 {    
     layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
 }
 void Kasuar::layout_itemSelectionChanged(const QItemSelection &selection)
 {
-    if(!selection.indexes().size())
+    Q_UNUSED(selection);
+    QModelIndex index = layout_list->currentIndex();
+    if(!index.isValid())
         return;
-    currentLayout = db->getLayoutByName(db->layout_model.itemFromIndex(selection.indexes().first())->text());
+
+    currentLayout = db->getLayoutByName(db->layout_model.itemFromIndex(index)->text());
     layout->loadPage(currentLayout);
 }
-void Kasuar::layout_nav_clicked()
+void Kasuar::layout_add_clicked()
 {
-    QModelIndexList ml = layout_list->selectionModel()->selectedIndexes();
-    int next = sender() == layout_next ? 1 : -1;
-
-    /* If list is empty, create one layout page */
-    if(db->layout_model.rowCount() == 0)
-        currentLayout = db->getLayoutByName(QString::number(1));
-
-    /* It's buggy */
-    if(ml.isEmpty()) {
-        layout_list->selectionModel()->select(db->layout_model.index(0,0), QItemSelectionModel::ClearAndSelect);
-        next = 0;
-    }
-    else {
-        next += ml.first().row();
-        if(next < 0)
-            return;
-        layout_list->selectionModel()->select(db->layout_model.index(next, 0), QItemSelectionModel::ClearAndSelect);
-    }
-    currentLayout = db->getLayoutByName(QString::number(next+1));
-    layout->loadPage(currentLayout);
+    int count = db->layout_model.rowCount();
+    currentLayout = db->createLayout(QString::number(count+1));
+    layout_list->setCurrentIndex(db->layout_model.index(count, 0));
 }
-void Kasuar::layout_load(Database::LayoutPage *l)
-{
-
-}
-
 void Kasuar::layout_selectionChanged()
 {
     int ruler = -1;
     int border = -1;
     QList<Database::LayoutItem*> selected = layout->getSelection();
     for(QList<Database::LayoutItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-        if(ruler == -1 || ruler == (*i)->ruler)
+        if(ruler == -1)
             ruler = (*i)->ruler;
-        else
+        if(ruler != (*i)->ruler)
             ruler = 2;
-        if(border == -1 || border == (*i)->border)
+
+        if(border == -1)
             border = (*i)->border;
-        else
+        if(border != (*i)->border)
             border = 2;
     }
     switch(ruler) {
@@ -148,21 +121,9 @@ void Kasuar::layout_selectionChanged()
 
 void Kasuar::layout_border_toggled(bool checked)
 {
-    QList<Database::LayoutItem*> selected = layout->getSelection();
-    for(QList<Database::LayoutItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-        (*i)->border = checked;
-        layout->recomputeObject(*i);
-    }
-    layout_border->setTristate(false);
+    layout->setSelectedBorder(checked);
 }
 void Kasuar::layout_ruler_toggled(bool checked)
 {
-    QList<Database::LayoutItem*> selected = layout->getSelection();
-    for(QList<Database::LayoutItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-        (*i)->ruler = checked;
-        layout->recomputeObject(*i);
-    }
-    layout_ruler->setTristate(false);
+    layout->setSelectedRuler(checked);
 }
-
-

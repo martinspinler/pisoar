@@ -1,5 +1,6 @@
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QMessageBox>
 
 #include "mainwindow.h"
 
@@ -39,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     quitAct = new QAction(tr("&Konec"), this);
     quitAct->setShortcuts(QKeySequence::Quit);
     quitAct->setStatusTip(tr("Ukončit program"));
-    connect(quitAct, &QAction::triggered, this, &MainWindow::quitKasuar);
+    connect(quitAct, &QAction::triggered, this, &QWidget::close);
 
     menuFile->addAction(newAct);
     menuFile->addAction(openAct);
@@ -52,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     showMaximized();
 
     /* Try to open database in predefined paths */
-    const char * base_dirs[] = { "D:\\anez\\", "/maestro/work/pisoar/photos", "/maestro/dismas/photos" };
+    const char * base_dirs[] = { "D:\\anez\\", "/maestro/work/pisoar/photos", "/maestro/dismas/photos", "/maestro/anez" };
     for(unsigned int i = 0; i < sizeof(base_dirs) / sizeof(base_dirs[0]); i++) {
         if(database->open(QDir(base_dirs[i]))) {
             pisoar->setCurrentDir(database->getDirBase());
@@ -70,6 +71,22 @@ void MainWindow::newFile()
     QFileDialog fd(this);
     fd.setFileMode(fd.DirectoryOnly);
     fd.exec();
+
+    if(database->open(fd.directory())) {
+        QMessageBox msgBox;
+        msgBox.setText("Existujcí databáze");
+        msgBox.setInformativeText("Opravdu chcete přepsat databázi a začít novou?");
+        msgBox.setStandardButtons(QMessageBox::Yes| QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::Save);
+        int ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Yes:
+                break;
+            default:
+                return;
+        }
+    }
+
     database->create(fd.directory());
     pisoar->setCurrentDir(database->getDirBase());
 }
@@ -89,8 +106,28 @@ void MainWindow::saveFile()
     database->save();
 }
 
-void MainWindow::quitKasuar()
+void MainWindow::closeEvent(QCloseEvent * event)
 {
-    close();
-}
+    if(!database->isModified()) {
+        event->accept();
+        return;
+    }
 
+    QMessageBox msgBox;
+    msgBox.setText("Uložit změny");
+    msgBox.setInformativeText("Chcete uložit změny v databázi?");
+    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+    int ret = msgBox.exec();
+    switch (ret) {
+        case QMessageBox::Save:
+            database->save();
+            event->accept();
+            break;
+        case QMessageBox::Discard:
+            event->accept();
+            break;
+        default:
+            event->ignore();
+    }
+}

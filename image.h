@@ -32,7 +32,9 @@ private:
 public:
 
     Image();
+    void clear();
     void loadImage(QString filename);
+    void addPoint(QPoint pos, QString name);
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);

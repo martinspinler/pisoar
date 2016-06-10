@@ -22,11 +22,13 @@
 #include "image.h"
 #include "database.h"
 #include "kasuar.h"
+#include "settings.h"
 
 class Pisoar : public QWidget
 {
     Q_OBJECT
 
+    Settings *settings;
     Database * db;
     QDir dir_list;
 
@@ -36,8 +38,8 @@ class Pisoar : public QWidget
     /* Layout - filelist */
     QListWidget *fl_list;
     QLabel      *fl_info;
-    QCheckBox   *fl_show;
 
+    QPushButton *fl_calib;
     QPushButton *fl_none;
     QPushButton *fl_wip;
     QPushButton *fl_done;
@@ -50,9 +52,8 @@ class Pisoar : public QWidget
     QListView   *db_list;
     QPushButton *db_new;
     QPushButton *db_assign;
-    QPushButton *db_save;
-    QPushButton *db_calib;
-    QPushButton *db_rename;
+    QPushButton *db_remove;
+    QPushButton *db_clean;
     QString     *db_id;
     QLabel      *db_preview;
     QLabel      *db_info;
@@ -69,6 +70,7 @@ public:
     void fl_list_itemSelectionChanged(const QItemSelection &selection);
     void fl_list_itemActivated();
     void fl_list_fill();
+    void fl_calib_clicked();
     void fl_show_stateChanged(int state);
     void fl_setFileFlag_clicked();
 
@@ -81,8 +83,8 @@ public:
     void db_kasuar_clicked();
     void db_new_clicked();
     void db_assign_clicked();
-    void db_calib_clicked();
-    void db_rename_clicked();
+    void db_remove_clicked();
+    void db_clean_clicked();
     void db_info_update();
 
     void assign_mask();

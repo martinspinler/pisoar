@@ -6,6 +6,21 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMessageBox>
+
+bool Database::ObjectItemModel::setData(const QModelIndex &index, const QVariant &value, int role)  {
+    QString newName = value.toString();
+    if(newName.isEmpty())
+        return false;
+
+    for(int i = 0; i < rowCount(); i++) {
+        if(item(i)->text() == newName && i != index.row()) {
+            QMessageBox(QMessageBox::Warning, "Špatné jméno", "Objekt s takovým názvem již existuje.").exec();
+            return false;
+        }
+    }
+    return QStandardItemModel::setData(index, value, role);
+}
 
 Database::Database()
 {
@@ -17,11 +32,14 @@ Database::Database()
     icon_0      = QIcon(":/icons/res/0.png");
     icon_1      = QIcon(":/icons/res/1.png");
     icon_2      = QIcon(":/icons/res/2.png");
+
+    connect(&object_model,    &QStandardItemModel::itemChanged, this, &Database::object_itemChanged);
 }
 void Database::clear()
 {
     object_model.clear();
     layout_model.clear();
+    bIsModified = false;
 
     while(!list_files.isEmpty())
         delete list_files.takeFirst();
@@ -48,12 +66,12 @@ bool Database::create(QDir dir)
 
 	dir.mkdir("items");
 	dir.mkdir("layouts");
+
 	return open(dir);
 }
 bool Database::open(QDir dir)
 {
     clear();
-
     dir.setCurrent(dir.path());
 
     dir_base = QDir();
@@ -124,6 +142,7 @@ bool Database::open(QDir dir)
             li->scale = o["scale"].toDouble();
             li->ruler = o["ruler"].toBool();
             li->border = o["border"].toBool();
+            li->type = o["type"].toInt();
             li->pos.setX(o["pointx"].toDouble());
             li->pos.setY(o["pointy"].toDouble());
             l->list_items.append(li);
@@ -132,6 +151,7 @@ bool Database::open(QDir dir)
         list_layouts.append(l);
         layout_model.appendRow(new QStandardItem(l->name));
     }
+    bIsModified = false;
     return true;
 }
 void Database::save()
@@ -170,7 +190,7 @@ void Database::save()
         for(QList<LayoutItem*>::const_iterator it = (*i)->list_items.constBegin(); it != (*i)->list_items.constEnd(); it++) {
             QJsonObject item;
             item["name"] = (*it)->name;
-            //item["type"] = (*it)->type;
+            item["type"] = (*it)->type;
             item["scale"] = (*it)->scale;
             item["ruler"] = (*it)->ruler;
             item["border"] = (*it)->border;
@@ -197,6 +217,7 @@ Database::ObjectItem* Database::createObject(QString name)
 {
     if(name.isEmpty() || findObjectByName(name))
         return NULL;
+    bIsModified = true;
     QStandardItem * it = new QStandardItem(icon_0, name);
     ObjectItem * i = new ObjectItem;
     i->name = name;
@@ -220,8 +241,25 @@ Database::ObjectView* Database::createView(Database::ObjectItem* item, QString f
         case 2: i = icon_2; break;
     }
     object_model.findItems(item->name).first()->setIcon(i);
+    bIsModified = true;
     return v;
 }
+const QList<QPair<QString, QPoint>> Database::getPointsByFile(QString file)
+{
+    QList<QPair<QString, QPoint>> list;
+    for(int i = 0; i < list_objects.size(); i++) {
+        for(int j = 0; j < list_objects[i]->views.size(); j++) {
+            if(list_objects[i]->views[j]->filename == file) {
+                QPair<QString, QPoint> x;
+                x.first = list_objects[i]->name;
+                x.second= list_objects[i]->views[j]->pos;
+                list.append(x);
+            }
+        }
+    }
+    return list;
+}
+
 Database::ImageFile * Database::findFileByName(QString name)
 {
     for(int i = 0; i < list_files.size(); i++)
@@ -236,6 +274,10 @@ Database::ObjectItem * Database::findObjectByName(QString name)
             return list_objects[i];
     return NULL;
 }
+Database::ObjectItem * Database::getObject(int i)
+{
+    return list_objects[i];
+}
 Database::ImageFile* Database::createFile(QString name)
 {
     ImageFile* i = new ImageFile;
@@ -243,40 +285,49 @@ Database::ImageFile* Database::createFile(QString name)
     i->flags = 0;
     i->scale = 0;
     list_files.append(i);
+    bIsModified = true;
+
     return i;
 }
 Database::LayoutItem* Database::createItem(LayoutPage *page, QString name)
 {
     LayoutItem* i = new LayoutItem;
     i->name = name;
-    i->scale = 0.80000001192092896;
+    i->scale = 0.8;
     i->pos = QPointF(0,0);
     i->border = false;
     i->ruler = false;
     page->list_items.append(i);
     object_model.findItems(i->name).first()->setIcon(icon_done);
+
+    bIsModified = true;
     return i;
 }
 void Database::removeItem(LayoutPage *page, LayoutItem * item)
 {
     page->list_items.removeAll(item);
 
-    QIcon i = icon_image;
+    QIcon icon = icon_image;
     switch(findObjectByName(item->name)->views.size()) {
-        case 0: i = icon_0; break;
-        case 1: i = icon_1; break;
-        case 2: i = icon_2; break;
+        case 0: icon = icon_0; break;
+        case 1: icon = icon_1; break;
+        case 2: icon = icon_2; break;
     }
     for(int x = 0; x < list_layouts.size(); x++) {
         if(list_layouts[x]->list_items.contains(item))
             return;
     }
-    object_model.findItems(item->name).first()->setIcon(i);
+    object_model.findItems(item->name).first()->setIcon(icon);
+    bIsModified = true;
 }
 Database::ImageFile* Database::getFileByName(QString name)
 {
     ImageFile* i = findFileByName(name);
-    return i ? i : createFile(name);
+    if(i)
+        return i;
+
+    bIsModified = true;
+    return createFile(name);
 }
 Database::LayoutPage* Database::getLayoutByName(QString name)
 {
@@ -284,10 +335,73 @@ Database::LayoutPage* Database::getLayoutByName(QString name)
         if(list_layouts[i]->name == name)
             return list_layouts[i];
 
+    return NULL;
+}
+Database::LayoutPage* Database::createLayout(QString name)
+{
     QStandardItem * it = new QStandardItem(name);
     LayoutPage* i = new LayoutPage;
     i->name = name;
     list_layouts.append(i);
     layout_model.appendRow(it);
     return i;
+}
+
+void Database::object_itemChanged(QStandardItem * item)
+{
+    ObjectItem * object = getObject(object_model.indexFromItem(item).row());
+    QString newName = item->text();
+
+    for(int i = 0; i < object->views.size(); i++) {
+        dir_items.rename(object->name + "_" + QString::number(i) + ".png", newName + "_" + QString::number(i) + ".png");
+    }
+    for(int i = 0; i < list_layouts.size(); i++) {
+        for(int j = 0; j < list_layouts[i]->list_items.size(); j++) {
+            if(list_layouts[i]->list_items[j]->name == object->name) {
+                list_layouts[i]->list_items[j]->name = newName;
+            }
+        }
+    }
+    object->name = newName;
+    return;
+}
+
+bool Database::removeObject(QString name)
+{
+    ObjectItem* object = findObjectByName(name);
+    if(!cleanObject(name))
+        return false;
+
+    int i = list_objects.indexOf(object);
+    list_objects.removeAt(i);
+    object_model.removeRow(i);
+
+    delete object;
+    return true;
+}
+
+bool Database::cleanObject(QString name)
+{
+    ObjectItem* object = findObjectByName(name);
+    for(int i = 0; i < list_layouts.size(); i++) {
+        for(int j = 0; j < list_layouts[i]->list_items.size(); j++) {
+            if(list_layouts[i]->list_items[j]->name == name) {
+                QMessageBox msgBox;
+                msgBox.setText("Objekt se používá");
+                msgBox.setInformativeText("Nejprve odstraňte všechny instance objektu z layoutů.");
+                msgBox.setStandardButtons(QMessageBox::Ok);
+                msgBox.exec();
+                return false;
+            }
+        }
+    }
+
+    for(int i = 0; i < object->views.size(); i++) {
+        dir_items.remove(object->name + "_" + QString::number(i) + ".png");
+        delete object->views[i];
+        bIsModified = true;
+    }
+    object->views.clear();
+    object_model.findItems(object->name).first()->setIcon(icon_0);
+    return true;
 }

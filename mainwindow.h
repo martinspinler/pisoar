@@ -36,7 +36,7 @@ private slots:
     void newFile();
     void openFile();
     void saveFile();
-    void quitKasuar();
+    void closeEvent(QCloseEvent * event);
 };
 
 #endif // MAINWINDOW_H

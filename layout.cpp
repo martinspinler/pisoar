@@ -11,20 +11,127 @@
 #include <QPaintDevice>
 #include <QMessageBox>
 
+#include <cmath>
 
-#define min(x,y) (x<y?x:y)
+Layout::LayoutView::LayoutView(Database::LayoutItem *i, Layout *layout)
+{
+    item = i;
+    l = layout;
+    childPadding = 30;
 
+    addToGroup((rruler      = new Ruler(l)));
+    addToGroup((rselect     = new QGraphicsRectItem()));
+    addToGroup((rrect       = new QGraphicsRectItem()));
+    addToGroup((rscale      = new QGraphicsTextItem()));
+    addToGroup((rindex      = new QGraphicsTextItem()));
 
+    rscale->hide();
+    rselect->hide();
+    rselect->setBrush(l->selectbrush);
+}
 
-#define INDEX_SELECT 0
-#define INDEX_RECT   1
-#define INDEX_RULER  2
-#define INDEX_SCALE  3
-#define INDEX_COUNT  4
-#define INDEX_PIX0   5
-#define INDEX_PIX1   6
-#define INDEX_LINEUP 7
-#define INDEX_LINEDOWN 8
+void Layout::LayoutView::updateObject()
+{
+    float rulerHeight  = item->ruler ? rruler->sceneBoundingRect().height() + childPadding : 0;
+    float rulerWidth   = l->ppm * 50 * item->scale;
+
+    rselect ->setRect(childPadding, childPadding, childWidth, childHeight);
+    rrect   ->setRect(0, 0, childWidth + 2*childPadding, childHeight + 2*childPadding + rulerHeight);
+    rruler  ->setPos(childPadding + childWidth/2 - rulerWidth/2, childPadding*1.5 + childHeight);
+    rindex  ->setPos(0, childHeight + childPadding);
+    rscale  ->setPlainText("Scale: 1x");
+    rrect   ->setVisible(item->border);
+    rruler  ->setVisible(item->ruler);
+    rruler  ->updateObject(item->scale);
+
+    setPos(item->pos);
+}
+
+Layout::TopSideView::TopSideView(Database::LayoutItem *i, Layout *layout) : Layout::LayoutView(i, layout)
+{
+    QPixmap ptop (l->db->getDirItems().filePath(item->name + "_0.png"));
+    QPixmap pside(l->db->getDirItems().filePath(item->name + "_1.png"));
+
+    addToGroup((rlinetop    = new QGraphicsLineItem()));
+    addToGroup((rlinebot    = new QGraphicsLineItem()));
+    addToGroup((rtop        = new QGraphicsPixmapItem(ptop)));
+    addToGroup((rside       = new QGraphicsPixmapItem(pside)));
+
+    updateObject();
+}
+
+void Layout::TopSideView::updateObject()
+{
+    const QPixmap pixtop = rtop->pixmap();
+    const QPixmap pixside = rside->pixmap();
+
+    bool swapside   = false;
+
+    float scale0    = 1;
+    float scale1    = ((float)pixtop.height()) / pixside.height();
+    float filescale = l->db->findFileByName(l->db->findObjectByName(item->name)->views.first()->filename)->scale / 10; // pixels per mm
+    float imgscale  = l->ppm / filescale;
+
+    rtop    ->setScale(item->scale * imgscale * scale0);
+    rside   ->setScale(item->scale * imgscale * scale1);
+
+    float width_space   = 10 * l->ppm * item->scale;
+    float width_pix0    = rtop->sceneBoundingRect().width();
+    float width_pix1    = rside->sceneBoundingRect().width();
+    childHeight         = rtop->sceneBoundingRect().height();
+    childWidth          = width_pix0 + width_space + width_pix1;
+
+    rtop    ->setPos(childPadding + (swapside ? 0 : width_pix1 + width_space), childPadding);
+    rside   ->setPos(childPadding + (swapside ? width_pix0 + width_space : 0), childPadding);
+    rlinetop->setLine(childPadding + (swapside ? width_pix0 : width_pix1) + 5, childPadding,               childPadding + (swapside ? width_pix0 : width_pix1) + width_space - 5, childPadding);
+    rlinebot->setLine(childPadding + (swapside ? width_pix0 : width_pix1) + 5, childPadding + childHeight, childPadding + (swapside ? width_pix0 : width_pix1) + width_space - 5, childPadding + childHeight);
+
+    LayoutView::updateObject();
+}
+
+Layout::TopView::TopView(Database::LayoutItem *i, Layout *layout) : Layout::LayoutView(i, layout)
+{
+    LayoutView(i,layout);
+    QPixmap ptop (l->db->getDirItems().filePath(item->name + "_0.png"));
+    addToGroup((rtop        = new QGraphicsPixmapItem(ptop)));
+    updateObject();
+}
+
+void Layout::TopView::updateObject()
+{
+    float filescale = l->db->findFileByName(l->db->findObjectByName(item->name)->views.first()->filename)->scale / 10; // pixels per mm
+    float imgscale  = l->ppm / filescale;
+
+    rtop    ->setScale(item->scale * imgscale);
+    rtop    ->setPos(childPadding , childPadding);
+    childWidth    = rtop->sceneBoundingRect().width();
+    childHeight   = rtop->sceneBoundingRect().height();
+
+    LayoutView::updateObject();
+}
+
+Layout::Ruler::Ruler(Layout * layout)
+{
+    l = layout;
+    QGraphicsRectItem * r;
+    QGraphicsTextItem * t;
+    r = new QGraphicsRectItem();                                addToGroup(r);
+    r = new QGraphicsRectItem();    r->setBrush(l->blackbrush); addToGroup(r);
+    r = new QGraphicsRectItem();    r->setBrush(l->blackbrush); addToGroup(r);
+    r = new QGraphicsRectItem();    r->setBrush(l->blackbrush); addToGroup(r);
+    t = new QGraphicsTextItem("0");                             addToGroup(t);
+    t = new QGraphicsTextItem("5 cm");                          addToGroup(t);
+}
+void Layout::Ruler::updateObject(float scale)
+{
+    float mmscale = scale *  l->ppm;
+    ((QGraphicsRectItem *)childItems()[0])->setRect(mmscale*00, 0, mmscale*50, 5*l->ppm);
+    ((QGraphicsRectItem *)childItems()[1])->setRect(mmscale*00, 0, mmscale*10, 5*l->ppm);
+    ((QGraphicsRectItem *)childItems()[2])->setRect(mmscale*20, 0, mmscale*10, 5*l->ppm);
+    ((QGraphicsRectItem *)childItems()[3])->setRect(mmscale*40, 0, mmscale*10, 5*l->ppm);
+    ((QGraphicsTextItem *)childItems()[4])->setPos(mmscale*-5, 7*l->ppm);
+    ((QGraphicsTextItem *)childItems()[5])->setPos(mmscale*45, 7*l->ppm);
+}
 
 Layout::Layout(Database * database)
     :db(database), blackbrush(Qt::black), selectbrush(Qt::lightGray), whitebrush(Qt::white)
@@ -39,26 +146,34 @@ Layout::Layout(Database * database)
     paperw              = 210 * ppm - edgew*2;
     paperh              = 297 * ppm - edgeh*2;
     dpi                 = 300.0f / logicalDpiX();
-    space_multiplier    = 1.2;
-
-    //default_scale       = 25.4f / logicalDpiX();
-    offsetx             = 30;
-    offsety             = 30;
-
-    QGraphicsRectItem * r;
-    r = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2);
-    r->setBrush(selectbrush);
-    scene->addItem(r);
-    r = new QGraphicsRectItem(0,0, paperw, paperh);
-    r->setBrush(whitebrush);
-    scene->addItem(r);
-
-    /*float x = float(size().width())  / (paperw + 2*edgew);
-    float y = float(size().height()) / (paperh + 2*edgeh);
-    scale(min(x,y), min(x,y));*/
-    //scale(3, 3);
+    alignment           = 5 * ppm;
 
     isMoving = false;
+
+    QGraphicsRectItem * r;
+
+    scene->addItem((r = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
+    r->setBrush(selectbrush);
+    scene->addItem((r = new QGraphicsRectItem(0, 0, paperw, paperh)));
+    r->setBrush(whitebrush);
+
+    scene->addItem((text_objectList = new QGraphicsTextItem()));
+    //QFont font = text_objectList->font();
+    //font.setPointSize(3);
+    //text_objectList->setFont(font);
+    text_objectList->setTextWidth(paperw);
+    text_objectList->setPos(0, paperh-12);
+}
+
+void Layout::clearLayout()
+{
+    for(int i = 0; i < objects.size(); i++)
+        scene->removeItem(objects[i]);
+
+    selected.clear();
+    objects.clear();
+
+    currentLayout = NULL;
 }
 
 void Layout::exportToImage(QString filename)
@@ -76,27 +191,9 @@ void Layout::exportToImage(QString filename)
 }
 void Layout::loadPage(Database::LayoutPage *page)
 {
+    clearLayout();
+
     currentLayout = page;
-    selected.clear();
-    objects.clear();
-    scene->clear();
-
-    QGraphicsRectItem * r;
-    r = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2);
-    r->setBrush(selectbrush);
-    scene->addItem(r);
-    r = new QGraphicsRectItem(0,0, paperw, paperh);
-    r->setBrush(whitebrush);
-    scene->addItem(r);
-
-    text_objectList = new QGraphicsTextItem();
-    scene->addItem(text_objectList);
-    QFont font = text_objectList->font();
-    //font.setPointSize(3);
-    text_objectList->setFont(font);
-    text_objectList->setTextWidth(paperw);
-    text_objectList->setPos(0, paperh-12);
-
     if(!currentLayout)
         return;
 
@@ -104,245 +201,100 @@ void Layout::loadPage(Database::LayoutPage *page)
         createObject(currentLayout->list_items[i]);
     }
 }
-QGraphicsItemGroup * Layout::addRuler()
+
+Layout::LayoutView* Layout::createObject(Database::LayoutItem *item)
 {
-    QGraphicsItemGroup * ruler = new QGraphicsItemGroup();
-    QGraphicsRectItem * r;
-    r = new QGraphicsRectItem();
-    ruler->addToGroup(r);
-
-    r = new QGraphicsRectItem();
-    r->setBrush(blackbrush);
-    ruler->addToGroup(r);
-    r = new QGraphicsRectItem();
-    r->setBrush(blackbrush);
-    ruler->addToGroup(r);
-    r = new QGraphicsRectItem();
-    r->setBrush(blackbrush);
-    ruler->addToGroup(r);
-    QGraphicsTextItem * t;
-    t = new QGraphicsTextItem("0");
-    ruler->addToGroup(t);
-    t = new QGraphicsTextItem("5 cm");
-    ruler->addToGroup(t);
-
-    return ruler;
-}
-void Layout::updateRuler(QGraphicsItemGroup* ruler, float scale)
-{
-    float mmscale = scale *  ppm;
-
-    ((QGraphicsRectItem *)ruler->childItems()[0])
-            ->setRect(mmscale*00, 0, mmscale*50, 5*ppm);
-
-    ((QGraphicsRectItem *)ruler->childItems()[1])
-            ->setRect(mmscale*00, 0, mmscale*10, 5*ppm);
-    ((QGraphicsRectItem *)ruler->childItems()[2])
-            ->setRect(mmscale*20, 0, mmscale*10, 5*ppm);
-    ((QGraphicsRectItem *)ruler->childItems()[3])
-            ->setRect(mmscale*40, 0, mmscale*10, 5*ppm);
-
-    ((QGraphicsRectItem *)ruler->childItems()[4])
-            ->setPos(mmscale*-5, 7*ppm);
-
-    ((QGraphicsRectItem *)ruler->childItems()[5])
-            ->setPos(mmscale*45, 7*ppm);
+    LayoutView * view;
+    Database::ObjectItem * i = db->findObjectByName(item->name);
+    switch(i->views.size()) {
+        case 0: return NULL;
+        case 1: view = new TopView(item, this); break;
+        case 2: view = new TopSideView(item, this); break;
+        default: view = new TopSideView(item, this); break;
+    }
+    scene->addItem(view);
+    objects.append(view);
+    updateText();
+    return view;
 }
 
-QGraphicsItemGroup* Layout::createObject(Database::LayoutItem *item)
+void Layout::updateText()
 {
-    QPixmap pix0(db->getDirItems().filePath(item->name + "_0.png"));
-    QPixmap pix1(db->getDirItems().filePath(item->name + "_1.png"));
-
-    QGraphicsRectItem * r;
-    QGraphicsItem * i;
-    QGraphicsTextItem * t;
-
-    QGraphicsItemGroup * group = new QGraphicsItemGroup();
-    QVariant v = qVariantFromValue((void*) item);
-    group->setData(0, v);
-    objects.push_back(group);
-    scene->addItem(group);
-
-    float lscale = ((float) pix0.height()) / pix1.height();
-
-    // INDEX_SELECT
-    r = new QGraphicsRectItem();
-    r->setBrush(selectbrush);
-    r->hide();
-    group->addToGroup(r);
-
-    // INDEX_RECT
-    r = new QGraphicsRectItem();
-    group->addToGroup(r);
-
-    // INDEX_RULER
-    QGraphicsItemGroup * g = addRuler();
-    group->addToGroup(g);
-
-    // INDEX_SCALE
-    t = new QGraphicsTextItem();
-    t->hide();
-    group->addToGroup(t);
-
-    // INDEX_COUNT
-    t = new QGraphicsTextItem(QString::number(objects.count()));
-    group->addToGroup(t);
-
-    // INDEX_PIX0
-    i = scene->addPixmap(pix0);
-    group->addToGroup(i);
-
-    // INDEX_PIX1
-    i = scene->addPixmap(pix1);
-    i->setScale(lscale);
-    group->addToGroup(i);
-
-    // INDEX_LINEUP && INDEX_LINEDOWN
-    group->addToGroup(new QGraphicsLineItem());
-    group->addToGroup(new QGraphicsLineItem());
-
-    QString text = text_objectList->document()->toPlainText() + QString(objects.count() == 1 ? QString("Tabulka č. " + currentLayout->name+"\n") :",  ") + QString::number(objects.count()) + " - " + item->name;
+    QString text = QString("Tabulka č. " + currentLayout->name + "\n");
+    int index = 1;
+    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++, index++) {
+        (*i)->rindex->setPlainText(QString::number(index));
+        text += QString(index == 1 ? "" : ", ") + QString::number(index) + " - " + (*i)->item->name;
+    }
     text_objectList->setPlainText(text);
     text_objectList->setPos(0, paperh - text_objectList->boundingRect().height());
-
-    recomputeObject(group);
-    return group;
 }
 
-void Layout::recomputeObject(Database::LayoutItem *item)
+void Layout::updateObject(Database::LayoutItem *item)
 {
-    for(QList<QGraphicsItem*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
-        Database::LayoutItem * it = (Database::LayoutItem *) (*i)->data(0).value<void *>();
-        if(it == item)
-            recomputeObject((QGraphicsItemGroup*)*i);
+    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
+        if((*i)->item == item)
+            (*i)->updateObject();
     }
-}
-
-void Layout::recomputeObject(QGraphicsItemGroup *group)
-{
-    Database::LayoutItem * item = (Database::LayoutItem *) group->data(0).value<void *>();
-
-    QGraphicsPixmapItem* ipix0 = ((QGraphicsPixmapItem*)group->childItems()[INDEX_PIX0]);
-    QGraphicsPixmapItem* ipix1 = ((QGraphicsPixmapItem*)group->childItems()[INDEX_PIX1]);
-
-    QPixmap pix0 = ipix0->pixmap();
-    QPixmap pix1 = ipix1->pixmap();
-
-    bool swapside   = false;
-
-    float scale0    = 1;
-    float scale1    = ((float)pix0.height()) / pix1.height();
-    float filescale = db->findFileByName(db->findObjectByName(item->name)->views.first()->filename)->scale / 10; // pixels per mm
-    if(filescale < 0.1)
-    {
-        QMessageBox::warning(this, "Bez měřítka", "Tento objekt nemá měřítko!");
-        return;
-    }
-    float imgscale  = ppm / filescale;
-
-    ipix0->setScale(item->scale * imgscale * scale0);
-    ipix1->setScale(item->scale * imgscale * scale1);
-
-    updateRuler(((QGraphicsItemGroup*)group->childItems()[INDEX_RULER]), item->scale);
-
-    float width_space   = 10 * ppm * item->scale;
-    float width_pix0    = ipix0->sceneBoundingRect().width();
-    float width_pix1    = ipix1->sceneBoundingRect().width();
-    float height        = ipix0->sceneBoundingRect().height();
-
-    float width_ruler   = ppm * 50 * item->scale;
-    //float width_ruler   = ((QGraphicsItemGroup*)group->childItems()[INDEX_RULER])->sceneBoundingRect().width()/2;
-    float height_ruler  = item->ruler ? ((QGraphicsItemGroup*)group->childItems()[INDEX_RULER])->sceneBoundingRect().height() + offsety : 0;
-
-    // INDEX_SELECT
-    ((QGraphicsRectItem*)group->childItems()[INDEX_SELECT])
-            ->setRect(offsetx, offsety, width_pix0 + width_space + width_pix1, height);
-
-    // INDEX_RECT
-    ((QGraphicsRectItem*)group->childItems()[INDEX_RECT])
-            ->setRect(0, 0, width_pix0 + width_space + width_pix1 + 2*offsetx, height + 2*offsety + height_ruler);
-
-    // INDEX_RULER
-    ((QGraphicsItemGroup*)group->childItems()[INDEX_RULER])
-            ->setPos(offsetx + (width_pix0 + width_space +width_pix1)/2 - width_ruler/2, offsety*1.5 + height);
-
-
-    // INDEX_SCALE
-    ((QGraphicsTextItem*)group->childItems()[INDEX_SCALE])
-            ->setPlainText("Scale: 1x");
-
-    // INDEX_COUNT
-    ((QGraphicsTextItem*)group->childItems()[INDEX_COUNT])
-            ->setPos(0, height + offsety);
-
-    // INDEX_PIX1
-    ((QGraphicsPixmapItem*)group->childItems()[INDEX_PIX0])
-            ->setPos(offsetx + (swapside ? 0 : width_pix1 + width_space), offsety);
-
-    // INDEX_PIX2
-    ((QGraphicsPixmapItem*)group->childItems()[INDEX_PIX1])
-            ->setPos(offsetx + (swapside ? width_pix0 + width_space : 0), offsety);
-
-
-    // INDEX_LINEUP && INDEX_LINEDOWN
-    ((QGraphicsLineItem*)group->childItems()[INDEX_LINEUP])
-            ->setLine(offsetx + (swapside ? width_pix0 : width_pix1) + 5, offsety,          offsetx + (swapside ? width_pix0 : width_pix1) + width_space - 5, offsety);
-    ((QGraphicsLineItem*)group->childItems()[INDEX_LINEDOWN])
-            ->setLine(offsetx + (swapside ? width_pix0 : width_pix1) + 5, offsety + height, offsetx + (swapside ? width_pix0 : width_pix1) + width_space - 5, offsety + height);
-
-    group->setPos(item->pos);
-
-    ((QGraphicsRectItem*)group->childItems()[INDEX_RECT])->setVisible(item->border);
-    ((QGraphicsRectItem*)group->childItems()[INDEX_RULER])->setVisible(item->ruler);
 }
 void Layout::addNewObject(Database::LayoutItem *item)
 {
     float left = 0, right = paperw / 2;
     float lefty = 0;
+    float leftytop = 0;
     float righty = 0;
     float x = 0, y = 0;
 
-    for(QList<QGraphicsItem*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
+    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
         if(x == left) {
             x = right;
-            lefty = (*i)->childItems()[INDEX_RECT]->sceneBoundingRect().bottom();
+            lefty = (*i)->rrect->sceneBoundingRect().bottom();
+            leftytop = (*i)->rrect->sceneBoundingRect().top();
         }
         else {
             x = left;
-            righty = (*i)->childItems()[INDEX_RECT]->sceneBoundingRect().bottom();
+            righty = (*i)->rrect->sceneBoundingRect().bottom();
         }
     }
     y = lefty > righty ? lefty : righty;
 
     if(x == right)
-        y = righty;
+        y = righty > leftytop ? righty : leftytop;
 
-    QGraphicsItemGroup* object = createObject(item);
+    if(db->findFileByName(db->findObjectByName(item->name)->views.first()->filename)->scale < 0.01) {
+        QMessageBox::warning(this, "Bez měřítka", "Tento objekt nemá měřítko!");
+        return;
+    }
+
+    x = ceil(x/alignment)*alignment;
+    y = ceil(y/alignment)*alignment;
+
+    LayoutView* object = createObject(item);
+    if(!object)
+        return;
+
     item->pos = QPointF(x,y);
-    object->moveBy(x, y);
+    object->setPos(item->pos);
 
     selectNone();
     selected.append(object);
-    object->childItems()[INDEX_SELECT]->show();
+    object->rselect->show();
 }
 void Layout::wheelEvent(QWheelEvent *event)
 {
     float delta = event->angleDelta().y();
 
     if(event->modifiers() & Qt::ControlModifier) {
-        for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
             /* TODO: scale selected and move to center of selection */
 
             /*float scale = (*i)->scale();
             (*i)->setScale(delta > 0 ? scale * 1.25 : scale * 0.8);*/
 
-            Database::LayoutItem * item = (Database::LayoutItem *) (*i)->data(0).value<void *>();
-            item->scale *= delta > 0 ? 1.25 : 0.8;
-            recomputeObject((QGraphicsItemGroup*)*i);
-
+            (*i)->item->scale *= delta > 0 ? 1.25 : 0.8;
+            (*i)->updateObject();
             QString text = QString("Scale: %1x").arg(QString::number((*i)->scale()*10));
-            ((QGraphicsTextItem*)(*i)->childItems()[INDEX_SCALE])->setPlainText(text);
+            (*i)->rscale->setPlainText(text);
         }
     }
     else {
@@ -366,14 +318,14 @@ void Layout::wheelEvent(QWheelEvent *event)
 void Layout::mousePressEvent(QMouseEvent *event)
 {
     QList<QGraphicsItem*> items;
-    QGraphicsItem * item = NULL;
+    LayoutView * item = NULL;
 
     mouse_move_pos = mouse_down_pos = mapToScene(event->pos());
 
     items = scene->items(mouse_down_pos);
     for(int i = 0; i < items.size(); i++) {
-        if(items[i]->parentItem() && objects.indexOf(items[i]->parentItem()) != -1) {
-            item = items[i]->parentItem();
+        if(items[i]->parentItem() && objects.indexOf((LayoutView*)items[i]->parentItem()) != -1) {
+            item = (LayoutView*)items[i]->parentItem();
             break;
         }
     }
@@ -401,15 +353,15 @@ void Layout::mouseReleaseEvent(QMouseEvent *event)
         return;
     isMoving = false;
 
-    QPointF posm = mapToScene(event->pos());
-    posm -= mouse_move_pos;
-    QPointF pos = mapToScene(event->pos());
-    pos -= mouse_down_pos;
-    for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-        (*i)->moveBy(posm.x(), posm.y());
-        QVariant v = (*i)->data(0);
-        Database::LayoutItem * li = (Database::LayoutItem *) v.value<void *>();
-        li->pos += pos;
+    QPointF pos = mapToScene(event->pos()) - mouse_down_pos;
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        QPointF & ip = (*i)->item->pos;
+        if(event->modifiers() & Qt::ControlModifier) {
+            ip.setX(round((ip.x() + pos.x())/alignment)*alignment);
+            ip.setY(round((ip.y() + pos.y())/alignment)*alignment);
+        } else
+            ip += pos;
+        (*i)->setPos(ip.rx(), ip.ry());
     }
 }
 
@@ -417,63 +369,69 @@ void Layout::mouseMoveEvent(QMouseEvent *event)
 {
     if(!isMoving)
         return;
-    if(!isMoving)
-        return;
-    QPointF pos = mapToScene(event->pos());
-    pos -= mouse_move_pos;
-    for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++)
-        (*i)->moveBy(pos.x(), pos.y());
-    mouse_move_pos += pos;
-
+    QPointF pos = mapToScene(event->pos()) - mouse_down_pos;
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        QPointF ip = (*i)->item->pos;
+        if(event->modifiers() & Qt::ControlModifier) {
+            ip.setX(round((ip.x() + pos.x())/alignment)*alignment);
+            ip.setY(round((ip.y() + pos.y())/alignment)*alignment);
+        } else
+            ip += pos;
+        (*i)->setPos(ip.rx(), ip.ry());
+    }
 }
+void Layout::setSelectedBorder(bool border)
+{
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        (*i)->item->border = border;
+        (*i)->updateObject();
+    }
+}
+void Layout::setSelectedRuler(bool ruler)
+{
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        (*i)->item->ruler = ruler;
+        (*i)->updateObject();
+    }
+}
+
 void Layout::selectNone()
 {
-    for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++)
-        (*i)->childItems()[INDEX_SELECT]->hide();
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++)
+        (*i)->rselect->hide();
     selected.clear();
     emit selectionChanged();
 }
-void Layout::selectObject(QString name, bool sel)
-{
-
-}
-void Layout::selectObject(QPointF pos, bool sel)
-{
-
-}
-void Layout::selectObject(QGraphicsItem* item, bool sel)
+void Layout::selectObject(LayoutView* item, bool sel)
 {
     if(sel && selected.indexOf(item) == -1) {
-        item->childItems()[INDEX_SELECT]->show();
+        item->rselect->show();
         selected.append(item);
     }
     else if(!sel) {
-        item->childItems()[INDEX_SELECT]->hide();
+        item->rselect->hide();
         selected.removeAll(item);
     }
     emit selectionChanged();
 }
-void Layout::selectToggle(QGraphicsItem* item)
+void Layout::selectToggle(LayoutView* item)
 {
     if(selected.indexOf(item) != -1) {
-        item->childItems()[INDEX_SELECT]->hide();
+        item->rselect->hide();
         selected.removeAll(item);
     }
     else {
-        item->childItems()[INDEX_SELECT]->show();
+        item->rselect->show();
         selected.append(item);
     }
     emit selectionChanged();
 }
 
-
-QGraphicsItemGroup * Layout::findGroupByItem(Database::LayoutItem * item)
+Layout::LayoutView * Layout::findViewByItem(Database::LayoutItem * item)
 {
-    for(QList<QGraphicsItem*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
-        QVariant v = (*i)->data(0);
-        Database::LayoutItem * li = (Database::LayoutItem *) v.value<void *>();
-        if(li == item)
-            return (QGraphicsItemGroup*) (*i);
+    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
+        if((*i)->item == item)
+            return (*i);
     }
     return NULL;
 }
@@ -481,21 +439,35 @@ QGraphicsItemGroup * Layout::findGroupByItem(Database::LayoutItem * item)
 const QList<Database::LayoutItem*> Layout::getSelection()
 {
     QList<Database::LayoutItem*> list;
-    for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-        Database::LayoutItem * item = (Database::LayoutItem *) (*i)->data(0).value<void *>();
-        list.append(item);
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        list.append((*i)->item);
     }
-
     return list;
 }
 
 void Layout::keyPressEvent(QKeyEvent * event)
 {
-    if(event->key() == Qt::Key_Delete) {
-        for(QList<QGraphicsItem*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
-            Database::LayoutItem * item = (Database::LayoutItem *) (*i)->data(0).value<void *>();
+    float dx = 0, dy = 0;
+    switch(event->key()){
+    case Qt::Key_Delete:
+        for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+            Database::LayoutItem * item = (*i)->item;
+            scene->removeItem(*i);
             db->removeItem(currentLayout, item);
         }
-        loadPage(currentLayout);
+        updateText();
+        break;
+    case Qt::Key_Up:        dy = -alignment;    break;
+    case Qt::Key_Down:      dy = +alignment;    break;
+    case Qt::Key_Left:      dx = -alignment;    break;
+    case Qt::Key_Right:     dx = +alignment;    break;
+    default:
+        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
+        (*i)->item->pos += QPoint(dx,dy);
+        (*i)->moveBy(dx, dy);
     }
 }
