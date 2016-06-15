@@ -212,6 +212,8 @@ void Database::save()
     QFile file("pisoardb.json");
     file.open(QIODevice::WriteOnly);
     file.write(doc.toJson());
+
+    bIsModified = false;
 }
 Database::ObjectItem* Database::createObject(QString name)
 {
@@ -244,9 +246,9 @@ Database::ObjectView* Database::createView(Database::ObjectItem* item, QString f
     bIsModified = true;
     return v;
 }
-const QList<QPair<QString, QPoint>> Database::getPointsByFile(QString file)
+const QList<QPair<QString, QPoint> > Database::getPointsByFile(QString file)
 {
-    QList<QPair<QString, QPoint>> list;
+    QList<QPair<QString, QPoint> > list;
     for(int i = 0; i < list_objects.size(); i++) {
         for(int j = 0; j < list_objects[i]->views.size(); j++) {
             if(list_objects[i]->views[j]->filename == file) {

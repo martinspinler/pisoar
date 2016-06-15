@@ -100,7 +100,7 @@ public:
     ImageFile * createFile(QString name);
     ImageFile * findFileByName(QString name);
     ImageFile * getFileByName(QString name);
-    const QList<QPair<QString, QPoint>> getPointsByFile(QString file);
+    const QList<QPair<QString, QPoint> > getPointsByFile(QString file);
 
     LayoutPage* createLayout(QString name);
     LayoutPage* getLayoutByName(QString name);

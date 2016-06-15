@@ -17,7 +17,7 @@ Layout::LayoutView::LayoutView(Database::LayoutItem *i, Layout *layout)
 {
     item = i;
     l = layout;
-    childPadding = 30;
+    childPadding = l->ppm * 5;
 
     addToGroup((rruler      = new Ruler(l)));
     addToGroup((rselect     = new QGraphicsRectItem()));

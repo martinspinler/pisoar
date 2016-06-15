@@ -121,7 +121,7 @@ void Pisoar::fl_list_itemSelectionChanged(const QItemSelection &selection)
         else
             fl_info->setText(QString("Měřítko: ") + QString::number(file->scale, 'f', 2) + QString(" px/cm"));
 
-        QList<QPair<QString, QPoint>> points = db->getPointsByFile(dir_list.filePath(fl_filename));
+        QList<QPair<QString, QPoint> > points = db->getPointsByFile(dir_list.filePath(fl_filename));
         for(int i = 0; i < points.size(); i++)
             image->addPoint(points[i].second, points[i].first);
     } else {
@@ -235,6 +235,7 @@ void Pisoar::assign_mask()
 }
 void Pisoar::fl_calib_clicked()
 {
+   setCursor(Qt::CrossCursor);
    image->calibrate();
 }
 void Pisoar::onObjectSelected()
@@ -248,6 +249,7 @@ void Pisoar::onObjectSelected()
 }
 void Pisoar::onCalibrateDone(QVariant scale)
 {
+    setCursor(Qt::ArrowCursor);
     float s = scale.toFloat() / 5;
     QString path = dir_list.filePath(fl_filename);
     db->getFileByName(path)->scale = s;
