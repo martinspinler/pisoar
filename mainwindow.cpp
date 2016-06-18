@@ -140,8 +140,5 @@ void MainWindow::closeEvent(QCloseEvent * event)
 
 void MainWindow::generateLayouts()
 {
-    for(int i = 0; i < database->layout_model.rowCount(); i++) {
-        QString ln = database->layout_model.item(i)->text();
-        kasuar->bakeLayout(database->getLayoutByName(ln));
-    }
+    kasuar->bakeLayouts();
 }

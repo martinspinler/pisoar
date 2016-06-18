@@ -78,10 +78,12 @@ void Kasuar::db_save_clicked()
 {    
     layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
 }
-void Kasuar::bakeLayout(Database::LayoutPage* page)
+void Kasuar::bakeLayouts()
 {
-    layout->loadPage(page);
-    layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
+    for(int i = 0; i < db->layout_model.rowCount(); i++) {
+        layout_list->setCurrentIndex(db->layout_model.index(i,0));
+        layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
+    }
 }
 void Kasuar::layout_itemSelectionChanged(const QItemSelection &selection)
 {

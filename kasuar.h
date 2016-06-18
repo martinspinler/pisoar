@@ -50,7 +50,7 @@ public:
     void layout_add_clicked();
     void layout_itemSelectionChanged(const QItemSelection &selection);
     void layout_selectionChanged();
-    void bakeLayout(Database::LayoutPage* page);
+    void bakeLayouts();
 
     void layout_border_toggled(bool checked);
     void layout_ruler_toggled(bool checked);

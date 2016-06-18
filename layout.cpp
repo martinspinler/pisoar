@@ -210,8 +210,10 @@ Layout::Layout(Database * database)
 
 void Layout::clearLayout()
 {
-    for(int i = 0; i < objects.size(); i++)
+    for(int i = 0; i < objects.size(); i++) {
         scene->removeItem(objects[i]);
+        delete objects[i];
+    }
 
     selected.clear();
     objects.clear();

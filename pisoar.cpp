@@ -92,6 +92,7 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
 }
 Pisoar::~Pisoar()
 {
+    delete settings;
 }
 
 void Pisoar::fl_list_itemActivated()
