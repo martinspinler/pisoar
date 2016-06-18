@@ -22,6 +22,7 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
     db_assign   = new QPushButton   ("&Přiřadit masku");
     db_remove   = new QPushButton   ("Odstranit objekt");
     db_clean    = new QPushButton   ("Odstranit pohledy");
+    db_generate = new QPushButton   ("Přegenerovat pohledy");
     db_info     = new QLabel        ("--INFO--");
 
     db_list     = new QListView();
@@ -56,6 +57,7 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
     box_database->addWidget(db_assign);
     box_database->addWidget(db_remove);
     box_database->addWidget(db_clean);
+    box_database->addWidget(db_generate);
 
     box_main->addLayout(box_filelist);
     box_main->addWidget(image, 1);
@@ -72,6 +74,7 @@ Pisoar::Pisoar(Database * database, QWidget *parent)
     connect(db_new,     &QPushButton::clicked, this, &Pisoar::db_new_clicked);
     connect(db_remove,  &QPushButton::clicked, this, &Pisoar::db_remove_clicked);
     connect(db_clean,   &QPushButton::clicked, this, &Pisoar::db_clean_clicked);
+    connect(db_generate,&QPushButton::clicked, this, &Pisoar::db_generate_clicked);
     connect(db_name,    &QLineEdit::returnPressed, this, &Pisoar::db_new_clicked);
 
     connect(db_list->selectionModel(),    &QItemSelectionModel::selectionChanged, this, &Pisoar::db_list_selectionChanged);
@@ -200,7 +203,7 @@ void Pisoar::db_new_clicked()
 
     Database::ObjectItem * i = db->createObject(db_name->text());
     if(i)
-        db_list->setCurrentIndex(db->object_model.indexFromItem(i->it));
+        db_list->setCurrentIndex(db->object_model.indexFromItem(db->object_model.findItems(i->name).first()));
     else
         QMessageBox::warning(this, "Špatné jméno", "Objekt s tímto jménem nelze vytvořit.");
 }
@@ -217,6 +220,22 @@ void Pisoar::db_clean_clicked()
 {
     db->cleanObject(db->object_model.itemFromIndex(db_list->currentIndex())->text());
 }
+void Pisoar::db_generate_clicked()
+{
+    QModelIndex index = db_list->currentIndex();
+    if(!index.isValid())
+        return;
+    QString name = db->object_model.itemFromIndex(index)->text();
+
+    Database::ObjectItem * item = db->findObjectByName(name);
+    for(int i = 0; i < item->views.size(); i++) {
+        image->loadImage(item->views[i]->filename);
+        image->assignMask(item->views[i]->pos);
+
+        QString path = db->getDirItems().filePath(name + "_" + QString::number(i) + ".png");
+        image->getSelectedObject().save(path, "PNG");
+    }
+}
 void Pisoar::assign_mask()
 {
     QModelIndex index = db_list->currentIndex();
@@ -227,7 +246,7 @@ void Pisoar::assign_mask()
     QPoint pt = image->getSelectedPoint();
 
     Database::ObjectItem * item = db->findObjectByName(name);
-    QString path = db->getDirItems().filePath(name + "_" + QString::number(item->views.size()) +".png");
+    QString path = db->getDirItems().filePath(name + "_" + QString::number(item->views.size()) + ".png");
     db->createView(item, dir_list.filePath(fl_filename), pt);
     obj_selected.save(path, "PNG");
     image->addPoint(pt, name);

@@ -38,6 +38,7 @@ public:
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void assignMask(QPoint pos);
     QImage findEdgeMask(int x, int y);
     QPoint getSelectedPoint();
     QPixmap&getSelectedObject();

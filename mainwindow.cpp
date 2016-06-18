@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     /* Menu */
     menuFile = menuBar()->addMenu(tr("&Databáze"));
+    menuLayout = menuBar()->addMenu(tr("&Layout"));
 
     newAct = new QAction(tr("&Nová"), this);
     newAct->setShortcuts(QKeySequence::New);
@@ -42,10 +43,15 @@ MainWindow::MainWindow(QWidget *parent)
     quitAct->setStatusTip(tr("Ukončit program"));
     connect(quitAct, &QAction::triggered, this, &QWidget::close);
 
+    generateAct = new QAction(tr("&Vygenerovat výstupy"), this);
+    generateAct->setStatusTip(tr("Vygenerovat obrázky pro všecchny layouty"));
+    connect(generateAct, &QAction::triggered, this, &MainWindow::generateLayouts);
+
     menuFile->addAction(newAct);
     menuFile->addAction(openAct);
     menuFile->addAction(saveAct);
     menuFile->addAction(quitAct);
+    menuLayout->addAction(generateAct);
 
     /* Main window */
     setWindowTitle("Pisoar - Photo Image SOrter for ARchaelogy");
@@ -129,5 +135,13 @@ void MainWindow::closeEvent(QCloseEvent * event)
             break;
         default:
             event->ignore();
+    }
+}
+
+void MainWindow::generateLayouts()
+{
+    for(int i = 0; i < database->layout_model.rowCount(); i++) {
+        QString ln = database->layout_model.item(i)->text();
+        kasuar->bakeLayout(database->getLayoutByName(ln));
     }
 }

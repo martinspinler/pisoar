@@ -101,6 +101,7 @@ bool Database::open(QDir dir)
     }
 
     /* Parse objects */
+    object_maxid = 0;
     QJsonArray objs = json["objects"].toArray();
     for(QJsonArray::const_iterator i = objs.constBegin(); i != objs.constEnd(); i++ ) {
 
@@ -125,7 +126,10 @@ bool Database::open(QDir dir)
             case 2: ic = icon_2; break;
         }
 
-        object_model.appendRow(new QStandardItem(ic, o->name));
+        QList <QStandardItem*> list;
+        list.append(new QStandardItem(ic, o->name));
+        list.append(new QStandardItem(QString::number(object_maxid++).rightJustified(6, '0')));
+        object_model.appendRow(list);
     }
 
     /* Parse layouts */
@@ -220,11 +224,14 @@ Database::ObjectItem* Database::createObject(QString name)
     if(name.isEmpty() || findObjectByName(name))
         return NULL;
     bIsModified = true;
-    QStandardItem * it = new QStandardItem(icon_0, name);
+
     ObjectItem * i = new ObjectItem;
     i->name = name;
-    i->it   = it;
-    object_model.appendRow(it);
+
+    QList <QStandardItem*> list;
+    list.append(new QStandardItem(icon_0, name));
+    list.append(new QStandardItem(QString::number(object_maxid++).rightJustified(6, '0')));
+    object_model.appendRow(list);
     list_objects.append(i);
     return i;
 }
@@ -276,10 +283,6 @@ Database::ObjectItem * Database::findObjectByName(QString name)
             return list_objects[i];
     return NULL;
 }
-Database::ObjectItem * Database::getObject(int i)
-{
-    return list_objects[i];
-}
 Database::ImageFile* Database::createFile(QString name)
 {
     ImageFile* i = new ImageFile;
@@ -293,17 +296,17 @@ Database::ImageFile* Database::createFile(QString name)
 }
 Database::LayoutItem* Database::createItem(LayoutPage *page, QString name)
 {
-    LayoutItem* i = new LayoutItem;
-    i->name = name;
-    i->scale = 0.8;
-    i->pos = QPointF(0,0);
-    i->border = false;
-    i->ruler = false;
-    page->list_items.append(i);
-    object_model.findItems(i->name).first()->setIcon(icon_done);
+    LayoutItem* item = new LayoutItem;
+    item->name = name;
+    item->scale = 0.8;
+    item->pos = QPointF(0,0);
+    item->border = false;
+    item->ruler = false;
+    page->list_items.append(item);
+    object_model.findItems(item->name).first()->setIcon(icon_done);
 
     bIsModified = true;
-    return i;
+    return item;
 }
 void Database::removeItem(LayoutPage *page, LayoutItem * item)
 {
@@ -351,7 +354,7 @@ Database::LayoutPage* Database::createLayout(QString name)
 
 void Database::object_itemChanged(QStandardItem * item)
 {
-    ObjectItem * object = getObject(object_model.indexFromItem(item).row());
+    ObjectItem * object = findObjectByName(item->text());
     QString newName = item->text();
 
     for(int i = 0; i < object->views.size(); i++) {
@@ -374,9 +377,8 @@ bool Database::removeObject(QString name)
     if(!cleanObject(name))
         return false;
 
-    int i = list_objects.indexOf(object);
-    list_objects.removeAt(i);
-    object_model.removeRow(i);
+    list_objects.removeAt(list_objects.indexOf(object));
+    object_model.removeRow(object_model.findItems(name).first()->index().row());
 
     delete object;
     return true;

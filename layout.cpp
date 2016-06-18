@@ -38,7 +38,7 @@ void Layout::LayoutView::updateObject()
     rselect ->setRect(childPadding, childPadding, childWidth, childHeight);
     rrect   ->setRect(0, 0, childWidth + 2*childPadding, childHeight + 2*childPadding + rulerHeight);
     rruler  ->setPos(childPadding + childWidth/2 - rulerWidth/2, childPadding*1.5 + childHeight);
-    rindex  ->setPos(0, childHeight + childPadding);
+    rindex  ->setPos(0, childHeight);
     rscale  ->setPlainText("Scale: 1x");
     rrect   ->setVisible(item->border);
     rruler  ->setVisible(item->ruler);
@@ -85,6 +85,49 @@ void Layout::TopSideView::updateObject()
     rside   ->setPos(childPadding + (swapside ? width_pix0 + width_space : 0), childPadding);
     rlinetop->setLine(childPadding + (swapside ? width_pix0 : width_pix1) + 5, childPadding,               childPadding + (swapside ? width_pix0 : width_pix1) + width_space - 5, childPadding);
     rlinebot->setLine(childPadding + (swapside ? width_pix0 : width_pix1) + 5, childPadding + childHeight, childPadding + (swapside ? width_pix0 : width_pix1) + width_space - 5, childPadding + childHeight);
+
+    LayoutView::updateObject();
+}
+
+
+Layout::TopBottomView::TopBottomView(Database::LayoutItem *i, Layout *layout) : Layout::LayoutView(i, layout)
+{
+    QPixmap ptop (l->db->getDirItems().filePath(item->name + "_0.png"));
+    QPixmap pside(l->db->getDirItems().filePath(item->name + "_1.png"));
+
+    addToGroup((rlineleft   = new QGraphicsLineItem()));
+    addToGroup((rlineright  = new QGraphicsLineItem()));
+    addToGroup((rtop        = new QGraphicsPixmapItem(ptop)));
+    addToGroup((rside       = new QGraphicsPixmapItem(pside)));
+
+    updateObject();
+}
+
+void Layout::TopBottomView::updateObject()
+{
+    const QPixmap pixtop = rtop->pixmap();
+    const QPixmap pixside = rside->pixmap();
+
+    bool swapside   = false;
+
+    float scale0    = 1;
+    float scale1    = ((float)pixtop.width()) / pixside.width();
+    float filescale = l->db->findFileByName(l->db->findObjectByName(item->name)->views.first()->filename)->scale / 10; // pixels per mm
+    float imgscale  = l->ppm / filescale;
+
+    rtop    ->setScale(item->scale * imgscale * scale0);
+    rside   ->setScale(item->scale * imgscale * scale1);
+
+    float height_space  = 10 * l->ppm * item->scale;
+    float height_pix0   = rtop->sceneBoundingRect().height();
+    float height_pix1   = rside->sceneBoundingRect().height();
+    childHeight         = height_pix0 + height_space + height_pix1;
+    childWidth          = rtop->sceneBoundingRect().width();
+
+    rtop    ->setPos(childPadding, childPadding + (swapside ? height_pix1 + height_space :0));
+    rside   ->setPos(childPadding, childPadding + (swapside ? 0 : height_pix0 + height_space));
+    rlineleft ->setLine(childPadding,              childPadding + (swapside ? height_pix1 : height_pix0) + 5, childPadding,              childPadding + (swapside ? height_pix1 : height_pix0) + height_space - 5);
+    rlineright->setLine(childPadding + childWidth, childPadding + (swapside ? height_pix1 : height_pix0) + 5, childPadding + childWidth, childPadding + (swapside ? height_pix1 : height_pix0) + height_space - 5);
 
     LayoutView::updateObject();
 }
@@ -172,8 +215,8 @@ void Layout::clearLayout()
 
     selected.clear();
     objects.clear();
-
     currentLayout = NULL;
+    updateText();
 }
 
 void Layout::exportToImage(QString filename)
@@ -209,7 +252,7 @@ Layout::LayoutView* Layout::createObject(Database::LayoutItem *item)
     switch(i->views.size()) {
         case 0: return NULL;
         case 1: view = new TopView(item, this); break;
-        case 2: view = new TopSideView(item, this); break;
+        case 2: (item->type == 1 ? view = new TopBottomView(item, this) : view = new TopSideView(item, this)); break;
         default: view = new TopSideView(item, this); break;
     }
     scene->addItem(view);
@@ -220,6 +263,10 @@ Layout::LayoutView* Layout::createObject(Database::LayoutItem *item)
 
 void Layout::updateText()
 {
+    if(!currentLayout) {
+        text_objectList->setPlainText("");
+        return;
+    }
     QString text = QString("Tabulka č. " + currentLayout->name + "\n");
     int index = 1;
     for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++, index++) {
@@ -287,9 +334,6 @@ void Layout::wheelEvent(QWheelEvent *event)
     if(event->modifiers() & Qt::ControlModifier) {
         for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
             /* TODO: scale selected and move to center of selection */
-
-            /*float scale = (*i)->scale();
-            (*i)->setScale(delta > 0 ? scale * 1.25 : scale * 0.8);*/
 
             (*i)->item->scale *= delta > 0 ? 1.25 : 0.8;
             (*i)->updateObject();
@@ -453,6 +497,7 @@ void Layout::keyPressEvent(QKeyEvent * event)
         for(QList<LayoutView*>::const_iterator i = selected.constBegin(); i != selected.constEnd(); i++) {
             Database::LayoutItem * item = (*i)->item;
             scene->removeItem(*i);
+            objects.removeAll(*i);
             db->removeItem(currentLayout, item);
         }
         updateText();

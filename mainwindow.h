@@ -15,10 +15,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     /* Menu */
     QMenu   *menuFile;
+    QMenu   *menuLayout;
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;
     QAction *quitAct;
+    QAction *generateAct;
 
     /* Main layout */
     QTabWidget *tabs;
@@ -37,6 +39,7 @@ private slots:
     void openFile();
     void saveFile();
     void closeEvent(QCloseEvent * event);
+    void generateLayouts();
 };
 
 #endif // MAINWINDOW_H

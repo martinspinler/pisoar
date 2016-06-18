@@ -56,6 +56,18 @@ class Layout : public QGraphicsView
         TopSideView(Database::LayoutItem*item, Layout *l);
         void updateObject();
     };
+
+    class TopBottomView: public LayoutView{
+    public:
+        QGraphicsPixmapItem * rtop;
+        QGraphicsPixmapItem * rside;
+        QGraphicsLineItem * rlineleft;
+        QGraphicsLineItem * rlineright;
+    public:
+        TopBottomView(Database::LayoutItem*item, Layout *l);
+        void updateObject();
+    };
+
     class TopView: public LayoutView{
     public:
         QGraphicsPixmapItem * rtop;
@@ -109,6 +121,7 @@ public:
     void setSelectedRuler(bool ruler);
 
     void keyPressEvent(QKeyEvent * event);
+    void bakeLayout(Database::LayoutPage* page);
 
     const QList<Database::LayoutItem*> getSelection();
 

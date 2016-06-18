@@ -78,17 +78,22 @@ void Image::mousePressEvent(QMouseEvent *event)
         skipcolor = pixmap.toImage().pixel(pos.x(), pos.y());
     }
     else {
-        QBitmap b;
-        QImage mask = findEdgeMask(pos.x(), pos.y());
-        b.convertFromImage(mask);
-        QRegion reg(b);
-        QRect r = reg.boundingRect();
-        QPixmap pixmap = this->pixmap;
-        pixmap.setMask(b);
-        pixmap_object = pixmap.copy(r.left(), r.top(),r.width(), r.height());
+        assignMask(pos.toPoint());
         emit objectSelected();
     }
 }
+void Image::assignMask(QPoint pos)
+{
+    QBitmap b;
+    QImage mask = findEdgeMask(pos.x(), pos.y());
+    b.convertFromImage(mask);
+    QRegion reg(b);
+    QRect r = reg.boundingRect();
+    QPixmap pixmap = this->pixmap;
+    pixmap.setMask(b);
+    pixmap_object = pixmap.copy(r.left(), r.top(),r.width(), r.height());
+}
+
 void Image::mouseReleaseEvent(QMouseEvent *event)
 {
     if(scene.items().count() == 0)

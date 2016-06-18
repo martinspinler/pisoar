@@ -28,7 +28,7 @@ class Kasuar : public QWidget
     QListView   *db_list;
     QPushButton *db_add;
     QPushButton *db_save;
-    QPushButton *db_bake;
+    QCheckBox   *db_sort;
 
     Layout      *layout;
 
@@ -44,12 +44,13 @@ public:
 
     void db_add_clicked();
     void db_save_clicked();
-    void db_bake_clicked();
+    void db_sort_toggled(bool checked);
     void db_activated(const QModelIndex &index);
 
     void layout_add_clicked();
     void layout_itemSelectionChanged(const QItemSelection &selection);
     void layout_selectionChanged();
+    void bakeLayout(Database::LayoutPage* page);
 
     void layout_border_toggled(bool checked);
     void layout_ruler_toggled(bool checked);

@@ -30,7 +30,6 @@ public:
     struct ObjectItem {
         QString name;
         QList<ObjectView*> views;
-        QStandardItem *it;
     };
     struct LayoutItem {
         QString name;
@@ -50,6 +49,8 @@ public:
     };
 
 private:
+    int  object_maxid;
+
     QDir dir_base;
     QDir dir_items;
     QDir dir_layouts;
@@ -87,7 +88,6 @@ public:
     const QDir & getDirLayouts() {return dir_layouts;}
 
     ObjectItem *createObject(QString name);
-    ObjectItem *getObject(int i);
     ObjectItem *findObjectByName(QString name);
     bool        removeObject(QString name);
     bool        cleanObject(QString name);

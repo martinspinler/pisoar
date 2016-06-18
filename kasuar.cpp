@@ -14,6 +14,7 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
 
     db_add          = new QPushButton("Přidat na plochu");
     db_save         = new QPushButton("Uložit výsledek");
+    db_sort         = new QCheckBox("Řadit podle jména");
 
     layout          = new Layout(db);
 
@@ -30,6 +31,7 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
     box_database->addWidget(db_list);
     box_database->addWidget(db_add);
     box_database->addWidget(db_save);
+    box_database->addWidget(db_sort);
 
     box_layout = new QVBoxLayout();
     box_layout->addWidget(layout_list);
@@ -44,6 +46,7 @@ Kasuar::Kasuar(Database *database, QWidget *parent)
 
     connect(db_add,         &QPushButton::clicked,  this, &Kasuar::db_add_clicked);
     connect(db_save,        &QPushButton::clicked,  this, &Kasuar::db_save_clicked);
+    connect(db_sort,        &QCheckBox::toggled,    this, &Kasuar::db_sort_toggled);
     connect(db_list,        &QListView::activated,  this, &Kasuar::db_activated);
 
     connect(layout_border,  &QCheckBox::toggled,    this, &Kasuar::layout_border_toggled);
@@ -73,6 +76,11 @@ void Kasuar::db_add_clicked()
 }
 void Kasuar::db_save_clicked()
 {    
+    layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
+}
+void Kasuar::bakeLayout(Database::LayoutPage* page)
+{
+    layout->loadPage(page);
     layout->exportToImage(db->getDirLayouts().filePath(currentLayout->name + QString(".png")));
 }
 void Kasuar::layout_itemSelectionChanged(const QItemSelection &selection)
@@ -126,4 +134,8 @@ void Kasuar::layout_border_toggled(bool checked)
 void Kasuar::layout_ruler_toggled(bool checked)
 {
     layout->setSelectedRuler(checked);
+}
+void Kasuar::db_sort_toggled(bool checked)
+{
+    db->object_model.sort(checked ? 0 : 1);
 }

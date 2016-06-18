@@ -53,6 +53,7 @@ class Pisoar : public QWidget
     QPushButton *db_new;
     QPushButton *db_assign;
     QPushButton *db_remove;
+    QPushButton *db_generate;
     QPushButton *db_clean;
     QString     *db_id;
     QLabel      *db_preview;
@@ -85,6 +86,7 @@ public:
     void db_assign_clicked();
     void db_remove_clicked();
     void db_clean_clicked();
+    void db_generate_clicked();
     void db_info_update();
 
     void assign_mask();
