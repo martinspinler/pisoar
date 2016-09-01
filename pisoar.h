@@ -12,12 +12,14 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QPixmap>
+#include <QToolBar>
 
 #include <QList>
 #include <QString>
 #include <QListWidgetItem>
 #include <QModelIndexList>
 #include <QPainter>
+#include <QVariant>
 
 #include "image.h"
 #include "database.h"
@@ -28,24 +30,25 @@ class Pisoar : public QWidget
 {
     Q_OBJECT
 
-    Settings *settings;
-    Database * db;
     QDir dir_list;
 
-    QString fl_filename;
+    QStandardItemModel * fl_list_model;
+
+    Database::ImageFile* fl_file;
+    Database::ImageFile* mask_file;
     QPixmap obj_selected;
+    QVariant selectedView;
 
     /* Layout - filelist */
-    QListWidget *fl_list;
+    QListView   *fl_list;
     QLabel      *fl_info;
-
-    QPushButton *fl_calib;
     QPushButton *fl_none;
     QPushButton *fl_wip;
     QPushButton *fl_done;
 
     /* Layout - image */
     Image       *image;
+    QToolBar    *image_toolbar;
 
     /* Layout - database */
     QLineEdit   *db_name;
@@ -61,21 +64,24 @@ class Pisoar : public QWidget
 
     /* Layout - containers */
     QHBoxLayout *box_main;
+    QVBoxLayout *box_image;
     QVBoxLayout *box_filelist;
     QVBoxLayout *box_database;
 
 public:
-    Pisoar(Database * db, QWidget *parent = 0);
+    Pisoar(QWidget *parent = 0);
     ~Pisoar();
 
-    void fl_list_itemSelectionChanged(const QItemSelection &selection);
-    void fl_list_itemActivated();
+    void setCurrentDir(QDir dir);
+
+    void fl_list_selectionChanged(const QItemSelection &selection);
+    void fl_list_activated(const QModelIndex &index);
     void fl_list_fill();
-    void fl_calib_clicked();
     void fl_show_stateChanged(int state);
     void fl_setFileFlag_clicked();
+    void fl_info_linkActivated(const QString & link);
+    void fl_info_update();
 
-    void db_list_activated(const QModelIndex &index);
     void db_list_itemChanged(QStandardItem* item);
     void db_list_selectionChanged(const QItemSelection &selection);
     void db_list_fill();
@@ -88,13 +94,14 @@ public:
     void db_clean_clicked();
     void db_generate_clicked();
     void db_info_update();
+    void db_info_linkActivated(const QString & link);
 
-    void assign_mask();
-
-    void setCurrentDir(QDir dir);
-
-//public slots:
-    void onObjectSelected();
+    void onImageSetToolHand() {image->setMode(Image::MODE_HAND);}
+    void onImageSetToolMask() {image->setMode(Image::MODE_MASK);}
+    void onImageSetToolRect() {image->setMode(Image::MODE_RECT);}
+    void onImageSetToolScale(){image->setMode(Image::MODE_SCALE);}
+    void onImageSetToolColor(){image->setMode(Image::MODE_COLOR);}
+    void onObjectSelected(QVariant obj);
     void onCalibrateDone(QVariant scale);
 };
 

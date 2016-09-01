@@ -12,6 +12,9 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QCheckBox>
+#include <QSortFilterProxyModel>
+#include <QToolBar>
+
 #include "layout.h"
 #include "database.h"
 
@@ -19,28 +22,29 @@ class Kasuar : public QWidget
 {
     Q_OBJECT
 
-    Database  * db;
-
     QHBoxLayout *box_main;
     QVBoxLayout *box_database;
     QVBoxLayout *box_layout;
+    QVBoxLayout *box_middle;
 
     QListView   *db_list;
     QPushButton *db_add;
-    QPushButton *db_save;
+
     QCheckBox   *db_sort;
 
+    /* Layout - main page */
     Layout      *layout;
+    QToolBar    *layout_toolbar;
 
     QListView   *layout_list;
     QPushButton *layout_add;
-    QCheckBox   *layout_border;
-    QCheckBox   *layout_ruler;
+    QPushButton *layout_save;
 
     Database::LayoutPage * currentLayout;
+    QSortFilterProxyModel * filter;
 
 public:
-    Kasuar(Database *database, QWidget *parent = 0);
+    Kasuar(QWidget *parent = 0);
 
     void db_add_clicked();
     void db_save_clicked();
@@ -49,11 +53,10 @@ public:
 
     void layout_add_clicked();
     void layout_itemSelectionChanged(const QItemSelection &selection);
-    void layout_selectionChanged();
     void bakeLayouts();
 
-    void layout_border_toggled(bool checked);
-    void layout_ruler_toggled(bool checked);
+    void onLayoutRect();
+    void onLayoutRuler();
 };
 
 #endif // KASUAR_H

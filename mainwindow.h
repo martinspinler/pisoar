@@ -8,38 +8,50 @@
 
 #include "pisoar.h"
 #include "kasuar.h"
-#include "database.h"
+#include "jaguar.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
     /* Menu */
+    enum { MaxRecentFiles = 4 };
     QMenu   *menuFile;
-    QMenu   *menuLayout;
-    QAction *newAct;
-    QAction *openAct;
-    QAction *saveAct;
-    QAction *quitAct;
-    QAction *generateAct;
+    QMenu   *menuTools;
+    QAction *menuNewAct;
+    QAction *menuOpenAct;
+    QAction *menuSaveAct;
+    QAction *menuQuitAct;
+    QAction *menuAboutAct;
+    QAction *menuSettingsAct;
+    QAction *menuGenerateAct;
+    QAction *menuSeparatorAct;
+    QAction *menuRecentFileActs[MaxRecentFiles];
 
     /* Main layout */
     QTabWidget *tabs;
     Pisoar *pisoar;
+    Jaguar *jaguar;
     Kasuar *kasuar;
-
-    /* Misc */
-    Database *database;
 
 public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-private slots:
-    void newFile();
-    void openFile();
-    void saveFile();
-    void closeEvent(QCloseEvent * event);
-    void generateLayouts();
+    void updateRecentFileActions();
+    void setCurrentFile(const QString &fileName);
+
+private:
+    void onMenuFileNew();
+    void onMenuFileOpen();
+    void onMenuFileSave();
+    void onMenuFileOpenRecent();
+    void onMenuToolsGenerateLayouts();
+    void onMenuToolsSettings();
+    void onMenuToolsAbout();
+
+    void openDir(const QDir &name);
+    void closeEvent(QCloseEvent * event); 
 };
 
 #endif // MAINWINDOW_H

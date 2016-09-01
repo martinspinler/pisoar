@@ -1,21 +1,48 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <QWidget>
+#include <QDialog>
 #include <QCheckBox>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QGridLayout>
 
-class Settings : public QWidget
+class Settings : public QDialog
 {
     Q_OBJECT
 
-public:
+    QLineEdit   *db_align;
+    QLineEdit   *db_pagewidth;
+    QLineEdit   *db_pageheight;
+
+    QLineEdit   *db_pageWidth;
+    QLineEdit   *db_pageHeight;
+    QLineEdit   *db_edgeTop;
+    QLineEdit   *db_edgeBottom;
+    QLineEdit   *db_edgeSides;
+
+    QLineEdit   *db_resolution;
+    QLineEdit   *db_calibSize;
+
+    QVBoxLayout *vbox;
+    QGridLayout *layout;
+
     QCheckBox   *fl_show;
+    QCheckBox   *db_next[3];
+
+   void closeEvent(QCloseEvent * event);
+
 public:
     explicit Settings(QWidget *parent = 0);
+    void fromJsonObject(const QJsonObject & obj);
+    QJsonObject toJsonObject();
 
-signals:
+    int calibLength;
+    bool showDoneFiles;
+    bool nextItemOnAssignView[3];
 
-public slots:
+    float dpi;
+    float ppm;
 };
 
 #endif // SETTINGS_H

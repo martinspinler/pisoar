@@ -10,11 +10,14 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QBitmap>
+#include <QVariant>
 
 class Image : public QGraphicsView
 {
     Q_OBJECT
 
+public:
+    enum Mode {MODE_HAND, MODE_MASK, MODE_RECT, MODE_SCALE, MODE_COLOR};
 private:
     struct s_check{int x; int y;};
 
@@ -23,32 +26,31 @@ private:
 
     uint skipcolor;
 
-    QPoint pos;
+    QPoint ptMouseDown;
 
-    int state;
+    Mode mode;
     QPixmap pixmap_object;
-
 
 public:
 
     Image();
+
+    void setMode(Mode m);
     void clear();
     void loadImage(QString filename);
-    void addPoint(QPoint pos, QString name);
+    void addObject(QVariant obj, QString name);
+
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    void assignMask(QPoint pos);
-    QImage findEdgeMask(int x, int y);
-    QPoint getSelectedPoint();
-    QPixmap&getSelectedObject();
+    void mouseMoveEvent(QMouseEvent *event);
 
-    void calibrate();
-    void setBorderColor();
+    QImage objectMask(QVariant obj);
+    QPixmap pixmapFromMask(QImage &mask);
 
 signals:
     void calibrateDone(float length);
-    void objectSelected();
+    void objectSelected(QVariant obj);
 };
 
 #endif // IMAGE_H

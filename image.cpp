@@ -1,140 +1,161 @@
-#include "image.h"
+#include <stack>
+#include <stdint.h>
+#include <cmath>
+
+#include <QApplication>
 #include <QSizePolicy>
 #include <QPointF>
 #include <QBitmap>
 #include <QTransform>
 #include <QGraphicsTextItem>
-#include <stack>
 
-#include <stdint.h>
-#include <cmath>
-
-#define min(x,y) (x<y?x:y)
+#include "image.h"
 
 Image::Image()
 {
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setScene(&scene);
-    state = 0;
     skipcolor = 0xFFFFFFFF;
-}
-QPoint Image::getSelectedPoint()
-{
-    return pos;
-}
-QPixmap& Image::getSelectedObject()
-{
-    return pixmap_object;
+
+    mode = MODE_HAND;
+    setDragMode(QGraphicsView::ScrollHandDrag);
 }
 
-void Image::calibrate()
+void Image::setMode(Mode m)
 {
-    state = 1;
-}
-void Image::setBorderColor()
-{
-    state = 2;
+    switch(m){
+    case MODE_HAND:
+        setDragMode(QGraphicsView::ScrollHandDrag);
+        break;
+    case MODE_SCALE:
+        setDragMode(QGraphicsView::NoDrag);
+        viewport()->setCursor(Qt::CrossCursor);
+        break;
+    case MODE_COLOR:
+        viewport()->setCursor(Qt::ArrowCursor);
+        setDragMode(QGraphicsView::NoDrag);
+        break;
+    case MODE_RECT:
+        viewport()->setCursor(Qt::CrossCursor);
+        setDragMode(QGraphicsView::RubberBandDrag);
+        break;
+    case MODE_MASK:
+        viewport()->setCursor(Qt::ArrowCursor);
+        setDragMode(QGraphicsView::NoDrag);
+        break;
+    }
+    mode = m;
 }
 
 void Image::wheelEvent(QWheelEvent *event)
 {
-    if(scene.items().count() == 0)
-        return;
-
-    float delta = event->angleDelta().y();
-
     if(event->modifiers() & Qt::ControlModifier) {
-        rotate(delta > 0 ? 90 : -90);
+        rotate(event->delta() > 0 ? 90 : -90);
     }
     else {
-        if(delta == 0)
-            return;
-        else if(delta > 0)
-            delta = 1.25;
-        else if(delta < 0)
-            delta = 0.8;
-
-        setTransformationAnchor(QGraphicsView::NoAnchor);
-        setResizeAnchor(QGraphicsView::NoAnchor);
-        QPointF oldPos = mapToScene(event->pos());
-        scale(delta, delta);
-        QPointF newPos = mapToScene(event->pos());
-        QPointF d = newPos - oldPos;
-        translate(d.x(), d.y());
+        setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+        double scaleFactor = 1.25;
+        if(event->delta() > 0)
+            scale(scaleFactor, scaleFactor);
+        else
+            scale(1.0 / scaleFactor, 1.0 / scaleFactor);
     }
 }
 
 void Image::mousePressEvent(QMouseEvent *event)
 {
-    if(scene.items().count() == 0)
-        return;
+    QPoint pos = ((QPointF) mapToScene(event->pos())).toPoint();
 
-    QPointF pos = mapToScene(event->pos());
-    if(state == 1){
-        this->pos = pos.toPoint();
-    }
-    else if(state == 2) {
-        state = 0;
+    switch(mode){
+    case MODE_RECT:
+        ptMouseDown = pos;
+    case MODE_HAND:
+        return QGraphicsView::mousePressEvent(event);
+    case MODE_MASK:
+        if(scene.items().count() == 0)
+            return;
+        emit objectSelected(QVariant::fromValue(pos));
+        break;
+    case MODE_COLOR:
         skipcolor = pixmap.toImage().pixel(pos.x(), pos.y());
-    }
-    else {
-        assignMask(pos.toPoint());
-        emit objectSelected();
+        break;
+    case MODE_SCALE:
+        ptMouseDown = pos;
+    default:
+        break;
     }
 }
-void Image::assignMask(QPoint pos)
+void Image::mouseMoveEvent(QMouseEvent *event) {
+    switch(mode){
+    case MODE_RECT:
+    case MODE_HAND:
+        return QGraphicsView::mouseMoveEvent(event);
+    default:
+        break;
+    }
+}
+void Image::mouseReleaseEvent(QMouseEvent *event)
+{
+    QPoint pos = ((QPointF) mapToScene(event->pos())).toPoint();
+    QRect rect;
+    switch(mode){
+    case MODE_RECT:
+        rect.setRect(   std::min(ptMouseDown.x(), pos.x()),
+                        std::min(ptMouseDown.y(), pos.y()),
+                        std::abs((ptMouseDown- pos).x()),
+                        std::abs((ptMouseDown- pos).y()) );
+        emit objectSelected(QVariant::fromValue(rect));
+    case MODE_HAND:
+        return QGraphicsView::mouseReleaseEvent(event);
+    case MODE_SCALE:{
+        if(scene.items().count() == 0)
+            break;
+        float calibrated_length = sqrt(pow((pos-ptMouseDown).x(), 2) + pow((pos-ptMouseDown).y(), 2));
+        emit calibrateDone(calibrated_length);
+        break;}
+    case MODE_COLOR:
+        break;
+    case MODE_MASK:
+        break;
+    default:
+        break;
+    }
+}
+
+QPixmap Image::pixmapFromMask(QImage &mask)
 {
     QBitmap b;
-    QImage mask = findEdgeMask(pos.x(), pos.y());
     b.convertFromImage(mask);
     QRegion reg(b);
     QRect r = reg.boundingRect();
     QPixmap pixmap = this->pixmap;
     pixmap.setMask(b);
-    pixmap_object = pixmap.copy(r.left(), r.top(),r.width(), r.height());
+    return pixmap.copy(r.left(), r.top(),r.width(), r.height());
 }
 
-void Image::mouseReleaseEvent(QMouseEvent *event)
-{
-    if(scene.items().count() == 0)
-        return;
-
-    QPointF posf = mapToScene(event->pos());
-    QPoint oldpos = pos;
-    pos = posf.toPoint();
-
-    if(state == 1) {
-        state = 0;
-        posf = posf - oldpos;
-        float calibrated_length = sqrt(pow(posf.x(), 2) + pow(posf.y(), 2));
-        emit calibrateDone(calibrated_length);
-    }
-}
 void Image::clear()
 {
-    resetTransform();
     scene.clear();
+    resetTransform();
 }
 void Image::loadImage(QString filename)
 {
     clear();
     if(pixmap.load(filename)) {
-        scene.addPixmap(pixmap);
-        float x = float(size().width())  / pixmap.size().width();
-        float y = float(size().height()) / pixmap.size().height();
-        scale(min(x,y), min(x,y));
-        //translate(x/2, y/2);
+        QGraphicsPixmapItem * pixmapItem = scene.addPixmap(pixmap);
+        ensureVisible(pixmapItem);
+        centerOn(pixmapItem);
+        fitInView(pixmapItem, Qt::KeepAspectRatio);
     }
 }
-void Image::addPoint(QPoint pos, QString name)
+void Image::addObject(QVariant obj, QString name)
 {
+    QPoint pos = obj.type() == QVariant::Point? obj.toPoint() : obj.toRect().center();
     QPen pen(Qt::red);
     pen.setWidth(5);
-
     QBrush brush(Qt::black);
-
     QPoint offset(40,40);
     scene.addEllipse(QRect(pos - offset, pos + offset), pen, brush);
+
     QGraphicsTextItem* t = scene.addText(name);
     QFont f = t->font();
     f.setPixelSize(72);
@@ -142,39 +163,58 @@ void Image::addPoint(QPoint pos, QString name)
     t->setPos(pos + QPoint(-t->boundingRect().width()/2, 50));
 }
 
-QImage Image::findEdgeMask(int x, int y)
+QImage Image::objectMask(QVariant obj)
 {
-    int width = pixmap.size().width();
-    int height = pixmap.size().height();
-    std::stack<Image::s_check> check;
+    int width   = pixmap.size().width();
+    int height  = pixmap.size().height();
 
     QImage image = pixmap.toImage();
     QImage mask = QImage(width, height, QImage::Format_ARGB32);
     mask.fill(0xffffffff);
 
-    uint *src = (uint*)image.bits();
-    uint *dst = (uint*)mask.bits();
+    uint32_t *src = (uint32_t*)image.bits();
+    uint32_t *dst = (uint32_t*)mask.bits();
     uint bpl = image.bytesPerLine()/4;
 
-    s_check ch; ch.x = x; ch.y = y;
-    check.push(ch);
-    while(!check.empty()) {
-        ch = check.top();
-        check.pop();
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
-        src[bpl*ch.y+ch.x] = skipcolor;
-        dst[bpl*ch.y+ch.x] = 0xff000000;
+    std::stack<Image::s_check> check;
+    s_check ch;
 
-        if(ch.x == 1 || ch.y == 1 || ch.x == width-2 || ch.y == height-2)
-            continue;
-        ch.x--;       ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-        ch.x+=2;      ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-        ch.x--;ch.y-- ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-               ch.y+=2;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-        /*ch.x--;       ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-        ch.x+=2;      ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-               ch.y-=2;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
-               ch.x-=2;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);*/
+    switch(obj.type()) {
+    case QVariant::Point:
+        ch.x = obj.toPoint().x(); ch.y = obj.toPoint().y();
+        check.push(ch);
+
+        while(!check.empty()) {
+            ch = check.top();
+            check.pop();
+
+            src[bpl*ch.y+ch.x] = skipcolor;
+            dst[bpl*ch.y+ch.x] = 0xff000000;
+
+            if(ch.x == 1 || ch.y == 1 || ch.x == width-2 || ch.y == height-2)
+                continue;
+            ch.x--;       ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
+            ch.x+=2;      ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
+            ch.x--;ch.y-- ;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
+                   ch.y+=2;if(src[bpl*ch.y+ch.x] != skipcolor) check.push(ch);
+        }
+        break;
+    case QVariant::Rect:
+        for(int y = obj.toRect().top(); y < obj.toRect().bottom(); y++) {
+            if(y < height && y >= 0) {
+                for(int x = obj.toRect().left(); x < obj.toRect().right(); x++) {
+                    if(x < width && x >= 0) {
+                        dst[bpl*y+x] = 0xff000000;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
     }
+    QApplication::restoreOverrideCursor();
     return mask;
 }

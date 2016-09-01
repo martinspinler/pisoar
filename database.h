@@ -13,35 +13,105 @@
 #include <QStringList>
 #include <QStandardItemModel>
 
+#include "settings.h"
+
+#define PISOAR_CURRENT_VERSION 0x00000002
+
 class Database : public QObject
 {
     Q_OBJECT
 
 public:
-    struct ImageFile {
-        QString name;
+    class ObjectItemModel;
+
+    class ImageFile : public QStandardItem {
+    public:
+        enum Flags {FLAG_NONE, FLAG_WIP, FLAG_DONE};
+    private:
+        friend class Database;
+
+        QString path;
+        Flags flags;
         float scale;
-        int flags;
+
+        void updateFlags();
+
+    public:
+        ImageFile(const QJsonObject & obj);
+        ImageFile(const QString & path);
+
+        QJsonObject toJsonObject();
+
+        QString getPath() {return path;}
+        float getScale() {return scale;}
+        Flags getFlags() {return flags;}
+        void setScale(float scale);
+        void setFlags(Flags flags);
     };
-    struct ObjectView {
-        QString filename;
-        QPoint pos;
+    class ObjectImage {
+    public:
+        enum Types {TYPE_POINT, TYPE_RECT};
+
+        ImageFile * file;
+        QVariant object;
+
+        ObjectImage(const QJsonObject & obj);
+        ObjectImage(ImageFile * file, QVariant obj) : file(file), object(obj) {}
+
+        QJsonObject toJsonObject();
     };
-    struct ObjectItem {
-        QString name;
+    class ObjectView {
+    public:
+        QList<ObjectImage*> images;
+        int type;
+
+        ObjectView(const QJsonObject & obj, const QList<ImageFile *> &list_files);
+        ObjectView(int type, const QList<ImageFile *> &list_files);
+
+        QJsonObject toJsonObject();
+    };
+    class ObjectItem : public QStandardItem {
+
+    public:
         QList<ObjectView*> views;
+        QList<ObjectImage*> images;
+
+        ObjectItem(const QString & name);
+        ObjectItem(const QJsonObject & obj);
+
+        virtual ~ObjectItem() { while(!images.isEmpty()) delete images.takeFirst(); }
+
+        QJsonObject toJsonObject();
+
+        ObjectImage *createImage(ImageFile* file, QVariant obj);
+        ObjectView *createView(int type, QList<ObjectImage *> images);
+
+        //LayoutView loadLayoutView();
     };
-    struct LayoutItem {
-        QString name;
+    class LayoutItem {
+    public:
+        ObjectItem * objectItem;
         QPointF pos;
         float scale;
         bool ruler;
         bool border;
         int type;
+
+        LayoutItem(ObjectItem * item);
+        LayoutItem(QJsonObject & obj);
+        QJsonObject toJsonObject();
     };
-    struct LayoutPage {
-        QString name;
+    class LayoutPage : public QStandardItem {
+    public:
         QList<LayoutItem*> list_items;
+
+        LayoutPage() {}
+        LayoutPage(QString &name) : QStandardItem(name) {}
+        LayoutPage(QJsonObject & obj);
+
+        virtual ~LayoutPage() { while(!list_items.isEmpty()) delete list_items.takeFirst(); }
+
+        QJsonObject toJsonObject();
     };
 
     class ObjectItemModel : public QStandardItemModel {
@@ -55,22 +125,13 @@ private:
     QDir dir_items;
     QDir dir_layouts;
 
-    QList <ImageFile*>  list_files;
-    QList <ObjectItem*> list_objects;
-    QList <LayoutPage*> list_layouts;
+    QList <ImageFile*> list_files;
 
     bool bIsModified;
 
 public:
-    QIcon icon_up;
-    QIcon icon_folder;
-    QIcon icon_wip;
-    QIcon icon_done;
-    QIcon icon_image;
-    QIcon icon_0;
-    QIcon icon_1;
-    QIcon icon_2;
 
+    Settings set;
     ObjectItemModel object_model;
     QStandardItemModel layout_model;
 
@@ -78,6 +139,7 @@ public:
     ~Database() {clear();}
 
     bool  isModified() {return bIsModified;}
+    void  setModified() {bIsModified = true;}
     bool  create(QDir dir);
     bool  open(QDir dir);
     void  save();
@@ -89,23 +151,20 @@ public:
 
     ObjectItem *createObject(QString name);
     ObjectItem *findObjectByName(QString name);
-    bool        removeObject(QString name);
-    bool        cleanObject(QString name);
+    bool        removeObject(ObjectItem *item);
+    bool        cleanObject(ObjectItem* item);
 
-    ObjectView *createView(ObjectItem* item, QString filename, QPoint pt);
-
-    LayoutItem* createItem(LayoutPage *page, QString name);
+    LayoutItem* createItem(LayoutPage *page, ObjectItem *objectItem);
     void        removeItem(LayoutPage* page, LayoutItem * item);
 
-    ImageFile * createFile(QString name);
+    ImageFile * createFile(const QString &name);
     ImageFile * findFileByName(QString name);
     ImageFile * getFileByName(QString name);
-    const QList<QPair<QString, QPoint> > getPointsByFile(QString file);
+    const QList<QPair<Database::ObjectItem*, QVariant> > getObjectsByFile(ImageFile *file);
 
     LayoutPage* createLayout(QString name);
-    LayoutPage* getLayoutByName(QString name);
-
-    void        object_itemChanged(QStandardItem * item);
 };
+
+extern Database * db;
 
 #endif // DATABASE_H

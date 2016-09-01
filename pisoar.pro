@@ -17,7 +17,10 @@ SOURCES += main.cpp\
     kasuar.cpp \
     layout.cpp \
     mainwindow.cpp \
-    settings.cpp
+    settings.cpp \
+    jaguar.cpp \
+    layoutview.cpp \
+    factory.cpp
 
 HEADERS  += pisoar.h \
     image.h \
@@ -25,7 +28,10 @@ HEADERS  += pisoar.h \
     kasuar.h \
     layout.h \
     mainwindow.h \
-    settings.h
+    settings.h \
+    jaguar.h \
+    layoutview.h \
+    factory.h
 
 RESOURCES += \
     resources.qrc

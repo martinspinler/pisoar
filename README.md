@@ -1,5 +1,5 @@
-# pisoar - Photo-Image Sorter fOr ARchaelogy
-The app is suited for sorting objects on photos/images and making layouts from them.
+# pisoar - PIcture SOrter for ARchaelogy
+The app is suited for sorting objects on photos and making layouts from them.
 
 # Usage
 0. prepare your photos outside Pisoar - every view of object must be cropped with white border
@@ -25,5 +25,5 @@ The app is suited for sorting objects on photos/images and making layouts from t
    - or you can check folder "items" for individual views
 
 # How to compile
-On Windows you will need a qtcreator with a build packages
-On Linux you will need qt libraries and qtmake
+On Windows you will need the qtcreator with a build packages
+On Linux you will need qt libraries and qmake
