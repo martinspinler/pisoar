@@ -142,9 +142,12 @@ void Image::loadImage(QString filename)
     clear();
     if(pixmap.load(filename)) {
         QGraphicsPixmapItem * pixmapItem = scene.addPixmap(pixmap);
-        ensureVisible(pixmapItem);
-        centerOn(pixmapItem);
+        QRectF br   = pixmapItem->boundingRect();
+        setSceneRect(br);
+
+        resetTransform();
         fitInView(pixmapItem, Qt::KeepAspectRatio);
+        centerOn(pixmapItem);
     }
 }
 void Image::addObject(QVariant obj, QString name)

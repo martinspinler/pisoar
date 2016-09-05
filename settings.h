@@ -24,6 +24,8 @@ class Settings : public QDialog
     QLineEdit   *db_resolution;
     QLineEdit   *db_calibSize;
 
+    QLineEdit   *db_layoutText;
+
     QVBoxLayout *vbox;
     QGridLayout *layout;
 
@@ -40,6 +42,7 @@ public:
     int calibLength;
     bool showDoneFiles;
     bool nextItemOnAssignView[3];
+    QString layoutText;
 
     float dpi;
     float ppm;

@@ -135,6 +135,11 @@ LayoutTopBottomView::LayoutTopBottomView(Database::LayoutItem *i) : LayoutView(i
     QPixmap ptop (db->getDirItems().filePath(layoutItem->objectItem->text() + "_0.png"));
     QPixmap pside(db->getDirItems().filePath(layoutItem->objectItem->text() + "_1.png"));
 
+    addToGroup((rlineleft   = new QGraphicsLineItem()));
+    addToGroup((rlineright  = new QGraphicsLineItem()));
+    addToGroup((rtop        = new QGraphicsPixmapItem(ptop)));
+    addToGroup((rside       = new QGraphicsPixmapItem(pside)));
+
     rlineleft->setZValue(1);
     rlineright->setZValue(1);
     rtop->setZValue(1);

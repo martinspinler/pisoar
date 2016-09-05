@@ -257,11 +257,11 @@ Database::ObjectImage* Database::ObjectItem::createImage(ImageFile * file, QVari
 
 Database::Database()
 {
-    //set = new Settin
+	bIsModified = false;
     set.calibLength = 5;
     set.dpi = 300;
     set.showDoneFiles = true;
-    //set.ppm = ;
+    set.layoutText = "Tabulka č. %1";
 }
 void Database::clear()
 {

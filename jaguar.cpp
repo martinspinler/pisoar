@@ -82,13 +82,12 @@ void Jaguar::db_selectionChanged(const QItemSelection &selected, const QItemSele
     QGraphicsRectItem * r = new QGraphicsRectItem();
     scene->addItem(r);
     scene->addItem(layoutView);
-    /*QRectF cr   = layoutView->childrenBoundingRect();
-    QRectF br   = layoutView->boundingRect();*/
-    QRectF sr   = layoutView->sceneBoundingRect();
-    r->setRect(sr);
 
-    //view->resetTransform();
-    //view->fitInView(layoutView);
+    QRectF br   = layoutView->boundingRect();
+    r->setRect(br);
+    view->setSceneRect(br);
+    view->resetTransform();
+    view->fitInView(layoutView, Qt::KeepAspectRatio);
     view->centerOn(layoutView);
 }
 

@@ -18,6 +18,7 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     db_pageWidth    = new QLineEdit();
     db_pageHeight   = new QLineEdit();
     db_calibSize    = new QLineEdit();
+    db_layoutText   = new QLineEdit();
 
     /*layout->addWidget(new QLabel("Zarovnání"),0,0);
     layout->addWidget(new QLabel("Rozlišení"),1,0);
@@ -27,6 +28,7 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     layout->addWidget(new QLabel("Šířka stránky"),5,0);
     layout->addWidget(new QLabel("Výška stránky"),6,0);*/
     layout->addWidget(new QLabel("Kalibrační velikost [cm]"),8,0);
+    layout->addWidget(new QLabel("Popisek plochy"),9,0);
 
     /*layout->addWidget(db_align,0,1);
     layout->addWidget(db_resolution,1,1);
@@ -36,6 +38,7 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     layout->addWidget(db_pageWidth,5,1);
     layout->addWidget(db_pageHeight,6,1);*/
     layout->addWidget(db_calibSize,8,1);
+    layout->addWidget(db_layoutText,9,1);
 
     vbox->addLayout(layout);
     for(int i = 0; i < 3; i++) {
@@ -55,15 +58,18 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     nextItemOnAssignView[0] = true;
     nextItemOnAssignView[1] = true;
     nextItemOnAssignView[2] = true;
+    layoutText              = "Tabulka č. %1";
 
     for(int i = 0; i < 3; i++)
         db_next[i]->setChecked(nextItemOnAssignView[i]);
     QString text = QString::number(calibLength);
     db_calibSize->setText(text);
+    db_layoutText->setText(layoutText);
     fl_show->setChecked(showDoneFiles);
 }
 
 void Settings::closeEvent(QCloseEvent * event){
+    layoutText = db_layoutText->text();
     calibLength = db_calibSize->text().toInt();
     showDoneFiles = fl_show->isChecked();
     for(int  i = 0; i < 3; i++)

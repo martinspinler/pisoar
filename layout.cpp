@@ -29,6 +29,7 @@ Layout::Layout()
     alignment           = 5 * db->set.ppm;
 
     setDragMode(QGraphicsView::RubberBandDrag);
+    setRubberBandSelectionMode(Qt::IntersectsItemBoundingRect);
 
     QGraphicsRectItem * r;
 
@@ -51,6 +52,7 @@ void Layout::clearLayout()
         scene->removeItem(objects[i]);
         delete objects[i];
     }
+    setSceneRect(QRect());
 
     objects.clear();
     currentLayout = NULL;
@@ -110,7 +112,7 @@ void Layout::updateText()
         text_objectList->setPlainText("");
         return;
     }
-    QString text = QString("Tabulka č. " + currentLayout->text() + "\n");
+    QString text = db->set.layoutText.arg(currentLayout->text()) + "\n";
     int index = 1;
     for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++, index++) {
         (*i)->rindex->setPlainText(QString::number(index));
