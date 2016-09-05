@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QGraphicsScene>
+#include <QGraphicsLineItem>
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QBitmap>
@@ -26,6 +27,7 @@ private:
 
     uint skipcolor;
 
+    QGraphicsLineItem * scale_line;
     QPoint ptMouseDown;
 
     Mode mode;

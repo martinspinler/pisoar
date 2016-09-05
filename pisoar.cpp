@@ -47,7 +47,7 @@ Pisoar::Pisoar(QWidget *parent)
     db_list->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     db_list->setEditTriggers(QAbstractItemView::EditKeyPressed | QAbstractItemView::SelectedClicked);
 
-    db_preview  = new QLabel("<center>Náhled masky</center>");
+    db_preview  = new QLabel("<center>Náhled pohledu</center>");
     db_preview->setAlignment(Qt::AlignCenter);
     db_preview->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 

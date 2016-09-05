@@ -52,7 +52,7 @@ Database::ImageFile::ImageFile(const QString & path) : path(path), flags(FLAG_NO
 Database::ImageFile::ImageFile(const QJsonObject &obj)
 {
     path  = obj["name"].toString();
-    scale = obj["scale"].toDouble();
+    scale = obj["scale"].toInt();
     flags = (Flags) obj["flags"].toInt();
     QFileInfo fi(path);
     setText(fi.fileName());
@@ -166,8 +166,8 @@ Database::LayoutItem::LayoutItem(QJsonObject &obj)
     scale   = obj["scale"].toDouble();
     ruler   = obj["ruler"].toBool();
     border  = obj["border"].toBool();
-    pos.setX(obj["pointx"].toDouble());
-    pos.setY(obj["pointy"].toDouble());
+    pos.setX(obj["pointx"].toInt());
+    pos.setY(obj["pointy"].toInt());
 }
 QJsonObject Database::LayoutItem::toJsonObject()
 {
@@ -177,8 +177,8 @@ QJsonObject Database::LayoutItem::toJsonObject()
     obj["scale"] = scale;
     obj["ruler"] = ruler;
     obj["border"] = border;
-    obj["pointx"] = pos.x();
-    obj["pointy"] = pos.y();
+    obj["pointx"] = (int) pos.x();
+    obj["pointy"] = (int) pos.y();
     return obj;
 }
 Database::LayoutPage::LayoutPage(QJsonObject & obj)

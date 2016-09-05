@@ -10,6 +10,7 @@
 #include <QGraphicsTextItem>
 
 #include "image.h"
+#include "factory.h"
 
 Image::Image()
 {
@@ -18,6 +19,15 @@ Image::Image()
 
     mode = MODE_HAND;
     setDragMode(QGraphicsView::ScrollHandDrag);
+
+    setResizeAnchor(QGraphicsView::AnchorViewCenter);
+    setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+
+    scale_line = new QGraphicsLineItem();
+    QPen p = scale_line->pen();
+    p.setWidth(4);
+    scale_line->setPen(p);
+
 }
 
 void Image::setMode(Mode m)
@@ -31,16 +41,18 @@ void Image::setMode(Mode m)
         viewport()->setCursor(Qt::CrossCursor);
         break;
     case MODE_COLOR:
-        viewport()->setCursor(Qt::ArrowCursor);
         setDragMode(QGraphicsView::NoDrag);
+        viewport()->setCursor(Qt::ArrowCursor);
         break;
     case MODE_RECT:
-        viewport()->setCursor(Qt::CrossCursor);
         setDragMode(QGraphicsView::RubberBandDrag);
+        viewport()->setCursor(Qt::CrossCursor);
         break;
     case MODE_MASK:
-        viewport()->setCursor(Qt::ArrowCursor);
         setDragMode(QGraphicsView::NoDrag);
+        viewport()->setCursor(Qt::ArrowCursor);
+        break;
+    default:
         break;
     }
     mode = m;
@@ -52,7 +64,6 @@ void Image::wheelEvent(QWheelEvent *event)
         rotate(event->delta() > 0 ? 90 : -90);
     }
     else {
-        setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
         double scaleFactor = 1.25;
         if(event->delta() > 0)
             scale(scaleFactor, scaleFactor);
@@ -68,35 +79,43 @@ void Image::mousePressEvent(QMouseEvent *event)
     switch(mode){
     case MODE_RECT:
         ptMouseDown = pos;
-    case MODE_HAND:
-        return QGraphicsView::mousePressEvent(event);
+        break;
     case MODE_MASK:
-        if(scene.items().count() == 0)
-            return;
-        emit objectSelected(QVariant::fromValue(pos));
+        if(scene.items().count())
+            emit objectSelected(QVariant::fromValue(pos));
         break;
     case MODE_COLOR:
         skipcolor = pixmap.toImage().pixel(pos.x(), pos.y());
         break;
     case MODE_SCALE:
         ptMouseDown = pos;
+        scale_line->setLine(ptMouseDown.x(), ptMouseDown.y(), pos.x(), pos.y());
+        scene.addItem(scale_line);
+        break;
     default:
         break;
     }
+    return QGraphicsView::mousePressEvent(event);
 }
 void Image::mouseMoveEvent(QMouseEvent *event) {
+    QPoint pos = ((QPointF) mapToScene(event->pos())).toPoint();
+
     switch(mode){
-    case MODE_RECT:
-    case MODE_HAND:
-        return QGraphicsView::mouseMoveEvent(event);
+    case MODE_SCALE:
+        scale_line->setLine(ptMouseDown.x(), ptMouseDown.y(), pos.x(), pos.y());
+        break;
     default:
         break;
     }
+
+    return QGraphicsView::mouseMoveEvent(event);
 }
 void Image::mouseReleaseEvent(QMouseEvent *event)
 {
+    float calibrated_length;
     QPoint pos = ((QPointF) mapToScene(event->pos())).toPoint();
     QRect rect;
+
     switch(mode){
     case MODE_RECT:
         rect.setRect(   std::min(ptMouseDown.x(), pos.x()),
@@ -104,21 +123,17 @@ void Image::mouseReleaseEvent(QMouseEvent *event)
                         std::abs((ptMouseDown- pos).x()),
                         std::abs((ptMouseDown- pos).y()) );
         emit objectSelected(QVariant::fromValue(rect));
-    case MODE_HAND:
-        return QGraphicsView::mouseReleaseEvent(event);
-    case MODE_SCALE:{
-        if(scene.items().count() == 0)
-            break;
-        float calibrated_length = sqrt(pow((pos-ptMouseDown).x(), 2) + pow((pos-ptMouseDown).y(), 2));
-        emit calibrateDone(calibrated_length);
-        break;}
-    case MODE_COLOR:
         break;
-    case MODE_MASK:
+    case MODE_SCALE:
+        scene.removeItem(scale_line);
+        calibrated_length = sqrt(pow((pos-ptMouseDown).x(), 2) + pow((pos-ptMouseDown).y(), 2));
+        if(scene.items().count())
+            emit calibrateDone(calibrated_length);
         break;
     default:
         break;
     }
+    return QGraphicsView::mouseReleaseEvent(event);
 }
 
 QPixmap Image::pixmapFromMask(QImage &mask)

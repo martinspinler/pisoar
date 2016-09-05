@@ -32,7 +32,7 @@ public:
 
         QString path;
         Flags flags;
-        float scale;
+        int scale;
 
         void updateFlags();
 
@@ -43,7 +43,7 @@ public:
         QJsonObject toJsonObject();
 
         QString getPath() {return path;}
-        float getScale() {return scale;}
+        int getScale() {return scale;}
         Flags getFlags() {return flags;}
         void setScale(float scale);
         void setFlags(Flags flags);

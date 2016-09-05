@@ -28,9 +28,10 @@ MainWindow::MainWindow(QWidget *parent)
     kasuar = new Kasuar();
 
     tabs = new QTabWidget();
-    tabs->addTab(pisoar, "Pisoar");
-    tabs->addTab(jaguar, "Jaguar");
-    tabs->addTab(kasuar, "Kasuar");
+
+    tabs->addTab(pisoar, "Přiřazení");
+    tabs->addTab(jaguar, "Náhled");
+    tabs->addTab(kasuar, "Výstup");
 
     /* Menu */
     menuFile    = menuBar()->addMenu(tr("&Databáze"));

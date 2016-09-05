@@ -31,6 +31,9 @@ Layout::Layout()
     setDragMode(QGraphicsView::RubberBandDrag);
     setRubberBandSelectionMode(Qt::IntersectsItemBoundingRect);
 
+    setResizeAnchor(QGraphicsView::AnchorViewCenter);
+    setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+
     QGraphicsRectItem * r;
 
     scene->addItem((r = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
