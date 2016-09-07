@@ -63,6 +63,7 @@ void Jaguar::db_selectionChanged(const QItemSelection &selected, const QItemSele
         scene->removeItem(layoutView);
         delete layoutView->layoutItem;
         delete layoutView;
+        layoutView = 0;
     }
     scene->clear();
 

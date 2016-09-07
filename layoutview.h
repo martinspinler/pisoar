@@ -32,6 +32,8 @@ public:
     LayoutView(Database::LayoutItem *li);
     virtual void updateObject();
 
+    virtual void setObjectScale(float scale);
+    virtual float objectScale();
     virtual QRectF boundingRect() const {return br;}
     virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) {}
     virtual void addToGroup(QGraphicsItem*i) {i->setParentItem(this);}

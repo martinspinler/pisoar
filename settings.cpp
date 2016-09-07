@@ -6,8 +6,17 @@
 
 Settings::Settings(QWidget *parent) : QDialog(parent)
 {
-    vbox = new QVBoxLayout();
-    layout = new QGridLayout();
+    /* Default values */
+    dpi                     = 300;
+    calibLength             = 5;
+    showDoneFiles           = true;
+    nextItemOnAssignView[0] = true;
+    nextItemOnAssignView[1] = true;
+    nextItemOnAssignView[2] = true;
+    layoutText              = "Tabulka č. %1";
+
+    vbox            = new QVBoxLayout();
+    layout          = new QGridLayout();
 
     fl_show         = new QCheckBox("Zobrazit hotové soubory");
     db_align        = new QLineEdit();
@@ -51,14 +60,6 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
 
     setLayout(vbox);
     setWindowTitle("Nastavení");
-
-    /* Default values */
-    calibLength             = 5;
-    showDoneFiles           = true;
-    nextItemOnAssignView[0] = true;
-    nextItemOnAssignView[1] = true;
-    nextItemOnAssignView[2] = true;
-    layoutText              = "Tabulka č. %1";
 
     for(int i = 0; i < 3; i++)
         db_next[i]->setChecked(nextItemOnAssignView[i]);

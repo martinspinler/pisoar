@@ -9,6 +9,7 @@
 #include <QGraphicsTextItem>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsLineItem>
+#include <QGraphicsRectItem>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPointF>
@@ -26,6 +27,8 @@ private:
 
     QGraphicsScene *scene;
     QGraphicsTextItem *text_objectList;
+    QGraphicsRectItem * edgeRect;
+    QGraphicsRectItem * mainRect;
 
     Database::LayoutPage * currentLayout;
 

@@ -60,6 +60,19 @@ void LayoutView::updateObject()
     br = childrenBoundingRect();
 }
 
+void LayoutView::setObjectScale(float scale)
+{
+    db->setModified();
+    layoutItem->scale = scale;
+    updateObject();
+    /*QString text = QString("Scale: %1x").arg(QString::number(view->scale()*10));
+    rscale->setPlainText(text);*/
+}
+float LayoutView::objectScale()
+{
+    return layoutItem->scale;
+}
+
 QVariant LayoutView::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == ItemSelectedHasChanged){

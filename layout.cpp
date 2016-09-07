@@ -5,8 +5,6 @@
 #include <QImage>
 #include <QPainter>
 #include <QGraphicsItem>
-#include <QGraphicsRectItem>
-#include <QGraphicsLineItem>
 #include <QTextDocument>
 #include <QFont>
 #include <QPaintDevice>
@@ -34,12 +32,10 @@ Layout::Layout()
     setResizeAnchor(QGraphicsView::AnchorViewCenter);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
-    QGraphicsRectItem * r;
-
-    scene->addItem((r = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
-    r->setBrush(f->selectbrush);
-    scene->addItem((r = new QGraphicsRectItem(0, 0, paperw, paperh)));
-    r->setBrush(f->whitebrush);
+    scene->addItem((edgeRect = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
+    edgeRect->setBrush(f->selectbrush);
+    scene->addItem((mainRect = new QGraphicsRectItem(0, 0, paperw, paperh)));
+    mainRect->setBrush(f->whitebrush);
 
     scene->addItem((text_objectList = new QGraphicsTextItem()));
     //QFont font = text_objectList->font();
@@ -66,7 +62,8 @@ void Layout::exportToImage(QString filename)
 {
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
     scene->clearSelection();
-    scene->setSceneRect(0, 0, paperw+1, paperh+1);
+    edgeRect->hide();
+    scene->setSceneRect(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2);
 
     QSizeF size = scene->sceneRect().size();
     QImage image(size.width()*db->set.dpi, size.height()*db->set.dpi, QImage::Format_ARGB32);
@@ -75,6 +72,7 @@ void Layout::exportToImage(QString filename)
     QPainter painter(&image);
     scene->render(&painter);
     image.save(filename);
+    edgeRect->show();
     QApplication::restoreOverrideCursor();
 }
 void Layout::loadPage(Database::LayoutPage *page)
@@ -182,10 +180,7 @@ void Layout::wheelEvent(QWheelEvent *event)
             LayoutView * view = (LayoutView*) item;
             /* TODO: scale selected and move to center of selection */
 
-            view->layoutItem->scale *= delta > 0 ? 1.25 : 0.8;
-            view->updateObject();
-            QString text = QString("Scale: %1x").arg(QString::number(view->scale()*10));
-            view->rscale->setPlainText(text);
+            view->setObjectScale(view->objectScale() * (delta > 0 ? 1.25 : 0.8));
         }
     }
     else {

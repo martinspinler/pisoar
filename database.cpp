@@ -52,7 +52,7 @@ Database::ImageFile::ImageFile(const QString & path) : path(path), flags(FLAG_NO
 Database::ImageFile::ImageFile(const QJsonObject &obj)
 {
     path  = obj["name"].toString();
-    scale = obj["scale"].toInt();
+    scale = obj["scale"].toDouble();
     flags = (Flags) obj["flags"].toInt();
     QFileInfo fi(path);
     setText(fi.fileName());
@@ -258,10 +258,6 @@ Database::ObjectImage* Database::ObjectItem::createImage(ImageFile * file, QVari
 Database::Database()
 {
 	bIsModified = false;
-    set.calibLength = 5;
-    set.dpi = 300;
-    set.showDoneFiles = true;
-    set.layoutText = "Tabulka č. %1";
 }
 void Database::clear()
 {
@@ -429,7 +425,7 @@ Database::ImageFile* Database::createFile(const QString & name)
 Database::LayoutItem* Database::createItem(LayoutPage *page, ObjectItem* objectItem)
 {
     LayoutItem* item = new LayoutItem(objectItem);
-    item->scale = 0.8;
+    item->scale = 1.0;
     item->pos = QPointF(0,0);
     item->border = false;
     item->ruler = false;
