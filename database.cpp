@@ -49,6 +49,15 @@ Database::ImageFile::ImageFile(const QString & path) : path(path), flags(FLAG_NO
     setText(fi.fileName());
     setIcon(f->icon_image);
 }
+Database::ImageFile::ImageFile(const ImageFile & file) : QStandardItem(file)
+{
+    path  = file.path;
+    scale = file.scale;
+    flags = file.flags;
+    setText(file.text());
+    updateFlags();
+}
+
 Database::ImageFile::ImageFile(const QJsonObject &obj)
 {
     path  = obj["name"].toString();
@@ -300,9 +309,6 @@ bool Database::open(QDir dir)
     QJsonDocument doc(QJsonDocument::fromJson(saveData));
     QJsonObject json = doc.object();
 
-    if(json.contains("settings"))
-        set.fromJsonObject(json["settings"].toObject());
-
     /* Parse files */
     QJsonArray files = json["files"].toArray();
     for(QJsonArray::const_iterator i = files.constBegin(); i != files.constEnd(); i++ ) {
@@ -339,6 +345,10 @@ bool Database::open(QDir dir)
         LayoutPage *layoutPage = new LayoutPage(obj);
         layout_model.appendRow(layoutPage);
     }
+
+    if(json.contains("settings"))
+        set.fromJsonObject(json["settings"].toObject());
+
     bIsModified = false;
     return true;
 }

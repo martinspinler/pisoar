@@ -67,8 +67,15 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     db_calibSize->setText(text);
     db_layoutText->setText(layoutText);
     fl_show->setChecked(showDoneFiles);
+
+    connect(fl_show, &QCheckBox::stateChanged, this, &Settings::fl_show_stateChanged);
 }
 
+void Settings::fl_show_stateChanged(int state)
+{
+    Q_UNUSED(state);
+    showDoneFiles = fl_show->isChecked();
+}
 void Settings::closeEvent(QCloseEvent * event){
     layoutText = db_layoutText->text();
     calibLength = db_calibSize->text().toInt();

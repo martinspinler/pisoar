@@ -37,6 +37,7 @@ public:
         void updateFlags();
 
     public:
+        ImageFile(const ImageFile & file);
         ImageFile(const QJsonObject & obj);
         ImageFile(const QString & path);
 

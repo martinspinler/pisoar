@@ -1,5 +1,6 @@
 #include <QMessageBox>
 #include <QActionGroup>
+#include <QDesktopServices>
 
 #include "factory.h"
 #include "database.h"
@@ -9,6 +10,7 @@ Pisoar::Pisoar(QWidget *parent)
     : QWidget(parent)
 {
     fl_file     = NULL;
+    doBatchScale = false;
 
     fl_none     = new QPushButton   (f->icon_image,    "&Bez označení");
     fl_wip      = new QPushButton   (f->icon_wip,      "&Rozparcováno");
@@ -116,6 +118,8 @@ Pisoar::Pisoar(QWidget *parent)
     connect(image,      &Image::calibrateDone, this, &Pisoar::onCalibrateDone);
     connect(image,      &Image::objectSelected,this, &Pisoar::onObjectSelected);
 
+    connect(db->set.fl_show, &QCheckBox::stateChanged, this, &Pisoar::fl_list_show);
+
     setLayout(box_main);
 
     fl_none     ->setEnabled(false);
@@ -136,11 +140,16 @@ void Pisoar::setCurrentDir(QDir dir)
     dir_list = dir;
     fl_list_fill();
 }
+
 void Pisoar::fl_list_activated(const QModelIndex &index)
 {
     QDir dir = dir_list;
-    if(dir.cd(fl_list_model->itemFromIndex(index)->text()))
+    if(dir.cd(fl_list_model->itemFromIndex(index)->text())) {
         setCurrentDir(dir);
+    }
+    else {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(dir.filePath(fl_list_model->itemFromIndex(index)->text())));
+    }
 }
 void Pisoar::fl_list_selectionChanged(const QItemSelection &selection)
 {
@@ -184,6 +193,9 @@ void Pisoar::fl_setFileFlag_clicked()
     fl_file->setFlags(newFlag);
     file->setFlags(newFlag);
     fl_list->setCurrentIndex(fl_list_model->index(file->row() + 1, 0));
+
+    if(!db->set.showDoneFiles && newFlag == Database::ImageFile::FLAG_DONE)
+        fl_list_model->removeRow(file->row());
 }
 void Pisoar::fl_show_stateChanged(int state)
 {
@@ -213,7 +225,12 @@ void Pisoar::fl_list_fill()
         fl_list_model->appendRow(new Database::ImageFile(*file));
     }
 }
-
+void Pisoar::fl_list_show(int state)
+{
+    Q_UNUSED(state);
+    fl_list_model->clear();
+    fl_list_fill();
+}
 void Pisoar::db_new_clicked()
 {
     if(db_name->text().isEmpty())
@@ -274,6 +291,22 @@ void Pisoar::onCalibrateDone(QVariant scale)
     fl_file->setScale(scale.toFloat() / db->set.calibLength);
     fl_info_update();
     db_info_update();
+    if(doBatchScale) {
+        Database::ObjectItem * item;
+        QModelIndex index = db_list->currentIndex();
+        if(!index.isValid()) {
+            return;
+        }
+        do {
+            db_list->setCurrentIndex(db->object_model.index(db_list->currentIndex().row() + 1, 0));
+            item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_list->currentIndex());
+            if(item && item->images.size() > 0 && item->images.first()->file->getScale() < 1) {
+                db_info_linkActivated(item->images[0]->file->getPath());
+                break;
+            }
+        }
+        while (item != NULL);
+    }
 }
 void Pisoar::fl_info_update()
 {

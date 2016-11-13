@@ -68,11 +68,15 @@ class Pisoar : public QWidget
     QVBoxLayout *box_filelist;
     QVBoxLayout *box_database;
 
+    bool        doBatchScale;
+
+
 public:
     Pisoar(QWidget *parent = 0);
     ~Pisoar();
 
     void setCurrentDir(QDir dir);
+    void batchScale() {doBatchScale = !doBatchScale;}
 
     void fl_list_selectionChanged(const QItemSelection &selection);
     void fl_list_activated(const QModelIndex &index);
@@ -81,6 +85,7 @@ public:
     void fl_setFileFlag_clicked();
     void fl_info_linkActivated(const QString & link);
     void fl_info_update();
+    void fl_list_show(int state);
 
     void db_list_itemChanged(QStandardItem* item);
     void db_list_selectionChanged(const QItemSelection &selection);

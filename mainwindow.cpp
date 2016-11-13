@@ -4,6 +4,7 @@
 #include <QStyle>
 #include <QApplication>
 #include <QMessageBox>
+#include <QInputDialog>
 
 #include "mainwindow.h"
 #include "database.h"
@@ -42,6 +43,8 @@ MainWindow::MainWindow(QWidget *parent)
     createNewMenuAction(menuSaveAct,    "&Uložit",      "Uložit databázi",              QKeySequence::Save, f->icon_save,   &MainWindow::onMenuFileSave);
     createNewMenuAction(menuQuitAct,    "&Konec",       "Ukončit program",              QKeySequence::Quit, f->icon_close,  &QWidget::close);
     createNewMenuAction(menuGenerateAct,"&Vygenerovat výstupy", "Vygenerovat obrázky pro všechny layouty", QKeySequence::UnknownKey, f->icon_save,  &MainWindow::onMenuToolsGenerateLayouts);
+    createNewMenuAction(menuBatchAddAct,"&Přidat více objektů", "Přidat více objektů najednou", QKeySequence::UnknownKey, f->icon_new,      &MainWindow::onMenuToolsBatchAdd);
+    createNewMenuAction(menuBatchScaleAct,"&Spustit proces měřítka", "Režim automatického vyhledání fotografií potřebujících měřítko", QKeySequence::UnknownKey, f->icon_ruler,      &MainWindow::onMenuToolsBatchScale);
     createNewMenuAction(menuSettingsAct,"&Nastavení",   "Nastavení parametrů programu", QKeySequence::UnknownKey, f->icon_settings,     &MainWindow::onMenuToolsSettings);
     createNewMenuAction(menuAboutAct,   "&O programu",  "Další informace o programu",   QKeySequence::UnknownKey, f->icon_help,         &MainWindow::onMenuToolsAbout);
 
@@ -63,6 +66,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     menuTools->addAction(menuGenerateAct);
     menuTools->addAction(menuSettingsAct);
+    menuTools->addAction(menuBatchAddAct);
+    menuTools->addAction(menuBatchScaleAct);
     menuTools->addSeparator();
     menuTools->addAction(menuAboutAct);
 
@@ -158,9 +163,28 @@ void MainWindow::closeEvent(QCloseEvent * event)
     }
 }
 
+void MainWindow::onMenuToolsBatchAdd()
+{
+    QInputDialog id;
+    id.setWindowTitle("Více objektů");
+    id.setLabelText("Vložte názvy objektů, každý na samostatný řádek");
+    id.setOption(QInputDialog::UsePlainTextEditForTextInput);
+    id.exec();
+    QStringList lines = id.textValue().split("\n");
+    foreach (QString line, lines){
+        if(!line.isEmpty())
+            db->createObject(line);
+    }
+}
+
 void MainWindow::onMenuToolsGenerateLayouts()
 {
     kasuar->bakeLayouts();
+}
+
+void MainWindow::onMenuToolsBatchScale()
+{
+    pisoar->batchScale();
 }
 
 void MainWindow::onMenuToolsAbout()

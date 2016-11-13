@@ -11,6 +11,7 @@ class Settings : public QDialog
 {
     Q_OBJECT
 
+public:
     QLineEdit   *db_align;
     QLineEdit   *db_pagewidth;
     QLineEdit   *db_pageheight;
@@ -33,6 +34,7 @@ class Settings : public QDialog
     QCheckBox   *db_next[3];
 
    void closeEvent(QCloseEvent * event);
+   void fl_show_stateChanged(int state);
 
 public:
     explicit Settings(QWidget *parent = 0);
