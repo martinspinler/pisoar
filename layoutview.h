@@ -20,35 +20,45 @@ public:
 };
 
 class LayoutView: public QGraphicsItem {
+    QRectF m_br;
+
+    LayoutRuler       * rruler;
+    QGraphicsRectItem * rselect;
+    QGraphicsTextItem * rscale;
+
 protected:
+    QPixmap             *pix;
+    QGraphicsPixmapItem *pixitem;
+
+    int m_pixmaps;
     float childWidth;
     float childHeight;
     float childPadding;
 
-    QRectF br;
+    QRectF doUniversalTransform(int i, float scale, int rotation);
+
 public:
-    Database::LayoutItem * layoutItem;
-
-    LayoutView(Database::LayoutItem *li);
-    virtual void updateObject();
-
-    virtual void setObjectScale(float scale);
-    virtual float objectScale();
-    virtual QRectF boundingRect() const {return br;}
-    virtual void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) {}
-    virtual void addToGroup(QGraphicsItem*i) {i->setParentItem(this);}
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
-
-    QGraphicsRectItem * rrect;
-    LayoutRuler       * rruler;
-    QGraphicsRectItem * rselect;
-    QGraphicsTextItem * rscale;
     QGraphicsTextItem * rindex;
+    QGraphicsRectItem * rrect;
+
+    Database::LayoutItem * layoutItem;
+    virtual void    updateObject();
+
+public:
+    LayoutView(Database::LayoutItem *li, int pixmaps = 0);
+    virtual ~LayoutView();
+
+    virtual void    setObjectScale(float scale);
+    virtual float   objectScale();
+    virtual QRectF  boundingRect() const {return m_br;}
+    virtual void    paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) {}
+    virtual void    addToGroup(QGraphicsItem*i) {i->setParentItem(this);}
+    QVariant        itemChange(GraphicsItemChange change, const QVariant &value);
+
+    static LayoutView * createView(Database::LayoutItem* item);
 };
 
 class LayoutTopSideView: public LayoutView {
-    QGraphicsPixmapItem * rtop;
-    QGraphicsPixmapItem * rside;
     QGraphicsLineItem * rlinetop;
     QGraphicsLineItem * rlinebot;
 public:
@@ -57,8 +67,6 @@ public:
 };
 
 class LayoutTopBottomView: public LayoutView {
-    QGraphicsPixmapItem * rtop;
-    QGraphicsPixmapItem * rside;
     QGraphicsLineItem * rlineleft;
     QGraphicsLineItem * rlineright;
 public:
@@ -66,8 +74,17 @@ public:
     void updateObject();
 };
 
+class LayoutTopSideFrontView: public LayoutView {
+    QGraphicsLineItem * rlineleft;
+    QGraphicsLineItem * rlineright;
+    QGraphicsLineItem * rlinetop;
+    QGraphicsLineItem * rlinebot;
+public:
+    LayoutTopSideFrontView(Database::LayoutItem*item);
+    void updateObject();
+};
+
 class LayoutTopView: public LayoutView {
-    QGraphicsPixmapItem * rtop;
 public:
     LayoutTopView(Database::LayoutItem*item);
     void updateObject();

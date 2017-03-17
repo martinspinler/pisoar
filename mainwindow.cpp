@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
     createNewMenuAction(menuGenerateAct,"&Vygenerovat výstupy", "Vygenerovat obrázky pro všechny layouty", QKeySequence::UnknownKey, f->icon_save,  &MainWindow::onMenuToolsGenerateLayouts);
     createNewMenuAction(menuBatchAddAct,"&Přidat více objektů", "Přidat více objektů najednou", QKeySequence::UnknownKey, f->icon_new,      &MainWindow::onMenuToolsBatchAdd);
     createNewMenuAction(menuBatchScaleAct,"&Spustit proces měřítka", "Režim automatického vyhledání fotografií potřebujících měřítko", QKeySequence::UnknownKey, f->icon_ruler,      &MainWindow::onMenuToolsBatchScale);
+    createNewMenuAction(menuCheckIntegrity,"&Zkontrolovat integritu", "Zkontroluje databázi a souborový systém", QKeySequence::UnknownKey, f->icon_check,      &MainWindow::onMenuToolsCheckIntegrity);
     createNewMenuAction(menuSettingsAct,"&Nastavení",   "Nastavení parametrů programu", QKeySequence::UnknownKey, f->icon_settings,     &MainWindow::onMenuToolsSettings);
     createNewMenuAction(menuAboutAct,   "&O programu",  "Další informace o programu",   QKeySequence::UnknownKey, f->icon_help,         &MainWindow::onMenuToolsAbout);
 
@@ -68,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
     menuTools->addAction(menuSettingsAct);
     menuTools->addAction(menuBatchAddAct);
     menuTools->addAction(menuBatchScaleAct);
+    menuTools->addAction(menuCheckIntegrity);
     menuTools->addSeparator();
     menuTools->addAction(menuAboutAct);
 
@@ -139,7 +141,7 @@ void MainWindow::onMenuFileSave()
 
 void MainWindow::closeEvent(QCloseEvent * event)
 {
-    if(!db->isModified()) {
+    if(!db->modified()) {
         event->accept();
         return;
     }
@@ -238,4 +240,17 @@ void MainWindow::updateRecentFileActions()
         menuRecentFileActs[j]->setVisible(false);
 
     menuSeparatorAct->setVisible(numRecentFiles > 0);
+}
+
+void MainWindow::onMenuToolsCheckIntegrity()
+{
+    for(int i = 0; i < db->object_model.rowCount(); i++) {
+        Database::ObjectItem * item = (Database::ObjectItem *) db->object_model.item(i);
+        for(int j = 0; j < item->images.size(); j++) {
+            QFile file(db->getDirBase().filePath(item->images[j]->path()));
+            if(!file.open(QFile::OpenModeFlag::ReadOnly)) {
+                qInfo() << "Missing " << item->images[j]->path() << " for item " << item->text();
+            }
+        }
+    }
 }

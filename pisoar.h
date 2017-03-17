@@ -3,7 +3,6 @@
 
 #include <QtCore>
 #include <QWidget>
-#include <QListWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -33,6 +32,7 @@ class Pisoar : public QWidget
     QDir dir_list;
 
     QStandardItemModel * fl_list_model;
+    QSortFilterProxyModel * db_filter_model;
 
     Database::ImageFile* fl_file;
     Database::ImageFile* mask_file;
@@ -61,6 +61,8 @@ class Pisoar : public QWidget
     QString     *db_id;
     QLabel      *db_preview;
     QLabel      *db_info;
+    QCheckBox   *db_sort;
+    QCheckBox   *db_filter;
 
     /* Layout - containers */
     QHBoxLayout *box_main;
@@ -76,7 +78,7 @@ public:
     ~Pisoar();
 
     void setCurrentDir(QDir dir);
-    void batchScale() {doBatchScale = !doBatchScale;}
+    void batchScale();
 
     void fl_list_selectionChanged(const QItemSelection &selection);
     void fl_list_activated(const QModelIndex &index);
@@ -90,6 +92,9 @@ public:
     void db_list_itemChanged(QStandardItem* item);
     void db_list_selectionChanged(const QItemSelection &selection);
     void db_list_fill();
+    void filter_edit(const QString &str);
+    void db_sort_toggled(bool checked);
+    void db_filter_toggled(bool checked);
 
     void db_save_clicked();
     void db_kasuar_clicked();

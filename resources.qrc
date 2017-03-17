@@ -11,5 +11,11 @@
         <file>res/hand.png</file>
         <file>res/rect.png</file>
         <file>res/wand.png</file>
+        <file>res/rotatel.png</file>
+        <file>res/rotater.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>res/rotatel.png</file>
+        <file>res/rotater.png</file>
     </qresource>
 </RCC>

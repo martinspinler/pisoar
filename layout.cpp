@@ -20,11 +20,11 @@ Layout::Layout()
 
     db->set.ppm         = logicalDpiX() / 25.4;
     db->set.dpi         = 300.0f / logicalDpiX();
-    edgew               = 10 * db->set.ppm;
-    edgeh               = 10 * db->set.ppm;
-    paperw              = 210 * db->set.ppm - edgew*2;
-    paperh              = 297 * db->set.ppm - edgeh*2;
-    alignment           = 5 * db->set.ppm;
+    edgew               = 10    * db->set.ppm;
+    edgeh               = 10    * db->set.ppm;
+    paperw              = 210   * db->set.ppm - edgew*2;
+    paperh              = 297   * db->set.ppm - edgeh*2;
+    alignment           = 5     * db->set.ppm;
 
     setDragMode(QGraphicsView::RubberBandDrag);
     setRubberBandSelectionMode(Qt::IntersectsItemBoundingRect);
@@ -33,8 +33,8 @@ Layout::Layout()
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
     scene->addItem((edgeRect = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
-    edgeRect->setBrush(f->selectbrush);
     scene->addItem((mainRect = new QGraphicsRectItem(0, 0, paperw, paperh)));
+    edgeRect->setBrush(f->selectbrush);
     mainRect->setBrush(f->whitebrush);
 
     scene->addItem((text_objectList = new QGraphicsTextItem()));
@@ -91,12 +91,7 @@ void Layout::loadPage(Database::LayoutPage *page)
 LayoutView* Layout::createObject(Database::LayoutItem *item)
 {
     LayoutView * view;
-    switch(item->objectItem->images.size()) {
-        case 0: return NULL;
-        case 1: view = new LayoutTopView(item); break;
-        case 2: (item->type == 1 ? view = new LayoutTopBottomView(item) : view = new LayoutTopSideView(item)); break;
-        default: view = new LayoutTopSideView(item); break;
-    }
+    view = LayoutView::createView(item);
     view->setFlag(LayoutView::ItemIsSelectable);
     view->setFlag(LayoutView::ItemIsMovable);
     view->setFlag(LayoutView::ItemSendsScenePositionChanges);
@@ -117,7 +112,7 @@ void Layout::updateText()
     int index = 1;
     for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++, index++) {
         (*i)->rindex->setPlainText(QString::number(index));
-        text += QString(index == 1 ? "" : ", ") + QString::number(index) + " - " + (*i)->layoutItem->objectItem->text();
+        text += QString(index == 1 ? "" : ", ") + QString::number(index) + " - " + (*i)->layoutItem->name();
     }
     text_objectList->setPlainText(text);
     text_objectList->setPos(0, paperh - text_objectList->boundingRect().height());
@@ -154,7 +149,7 @@ void Layout::addNewObject(Database::LayoutItem *item)
     if(x == right)
         y = righty > leftytop ? righty : leftytop;
 
-    if(item->objectItem->images.first()->file->getScale() < 0.01) {
+    if(item->objectView()->item.images.first()->scale() < 0.01) {
         QMessageBox::warning(this, "Bez měřítka", "Tento objekt nemá měřítko!");
         return;
     }
@@ -197,16 +192,18 @@ void Layout::setSelectedBorder(bool border)
 {
     foreach (QGraphicsItem *item, scene->selectedItems()) {
         LayoutView * view = (LayoutView*) item;
-        view->layoutItem->border = border;
+        view->layoutItem->setBorder(border);
         view->updateObject();
+        db->setModified();
     }
 }
 void Layout::setSelectedRuler(bool ruler)
 {
     foreach (QGraphicsItem *item, scene->selectedItems()) {
         LayoutView * view = (LayoutView*) item;
-        view->layoutItem->ruler = ruler;
+        view->layoutItem->setRuler(ruler);
         view->updateObject();
+        db->setModified();
     }
 }
 

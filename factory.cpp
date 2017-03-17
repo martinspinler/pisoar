@@ -22,6 +22,7 @@ Factory::Factory() :
     icon_refresh= s->standardIcon(QStyle::SP_BrowserReload);
     icon_up     = s->standardIcon(QStyle::SP_FileDialogToParent);
     icon_dir    = s->standardIcon(QStyle::SP_DirIcon);
+    icon_check  = s->standardIcon(QStyle::SP_DriveFDIcon);
 
     icon_ruler  = QIcon(":/icons/res/ruler.png");
     icon_wip    = QIcon(":/icons/res/wip.png");
@@ -34,4 +35,6 @@ Factory::Factory() :
     icon_hand   = QIcon(":/icons/res/hand.png");
     icon_rect   = QIcon(":/icons/res/rect.png");
     icon_color  = QIcon(":/icons/res/color.png");
+    icon_rleft  = QIcon(":/icons/res/rotatel.png");
+    icon_rright = QIcon(":/icons/res/rotater.png");
 }

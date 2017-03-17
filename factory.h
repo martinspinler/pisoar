@@ -25,6 +25,7 @@ public:
     QIcon icon_refresh;
     QIcon icon_up;
     QIcon icon_dir;
+    QIcon icon_check;
 
     QIcon icon_ruler;
     QIcon icon_wip;
@@ -37,6 +38,8 @@ public:
     QIcon icon_hand;
     QIcon icon_rect;
     QIcon icon_color;
+    QIcon icon_rleft;
+    QIcon icon_rright;
 
     QBrush blackbrush;
     QBrush selectbrush;

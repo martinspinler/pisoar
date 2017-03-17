@@ -12,6 +12,10 @@ Pisoar::Pisoar(QWidget *parent)
     fl_file     = NULL;
     doBatchScale = false;
 
+    db_filter_model = new QSortFilterProxyModel(this);
+    db_filter_model->setSourceModel(&db->object_model);
+    db_filter_model->setDynamicSortFilter(true);
+
     fl_none     = new QPushButton   (f->icon_image,    "&Bez označení");
     fl_wip      = new QPushButton   (f->icon_wip,      "&Rozparcováno");
     fl_done     = new QPushButton   (f->icon_done,     "&Hotovo");
@@ -45,7 +49,7 @@ Pisoar::Pisoar(QWidget *parent)
     connect(db_info,  &QLabel::linkActivated, this, &Pisoar::db_info_linkActivated);
 
     db_list     = new QListView();
-    db_list->setModel(&db->object_model);
+    db_list->setModel(db_filter_model);
     db_list->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     db_list->setEditTriggers(QAbstractItemView::EditKeyPressed | QAbstractItemView::SelectedClicked);
 
@@ -54,6 +58,8 @@ Pisoar::Pisoar(QWidget *parent)
     db_preview->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     db_name     = new QLineEdit();
+    db_filter   = new QCheckBox("Filtrovat");
+    db_sort     = new QCheckBox("Řadit podle jména");
 
     image       = new Image();
     image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -85,6 +91,8 @@ Pisoar::Pisoar(QWidget *parent)
     box_database->addWidget(db_list);
     box_database->addWidget(db_info);
     box_database->addWidget(db_name);
+    box_database->addWidget(db_filter);
+    box_database->addWidget(db_sort);
 
     box_database->addWidget(db_new);
     box_database->addWidget(db_remove);
@@ -113,6 +121,10 @@ Pisoar::Pisoar(QWidget *parent)
     connect(db_generate,&QPushButton::clicked, this, &Pisoar::db_generate_clicked);
     connect(db_name,    &QLineEdit::returnPressed, this, &Pisoar::db_new_clicked);
 
+    connect(db_name,    &QLineEdit::textChanged, this, &Pisoar::filter_edit);
+    connect(db_filter,  &QCheckBox::toggled, this, &Pisoar::db_filter_toggled);
+    connect(db_sort,    &QCheckBox::toggled, this, &Pisoar::db_sort_toggled);
+
     connect(db_list->selectionModel(),    &QItemSelectionModel::selectionChanged, this, &Pisoar::db_list_selectionChanged);
 
     connect(image,      &Image::calibrateDone, this, &Pisoar::onCalibrateDone);
@@ -140,6 +152,24 @@ void Pisoar::setCurrentDir(QDir dir)
     dir_list = dir;
     fl_list_fill();
 }
+void Pisoar::batchScale()
+{
+    Database::ObjectItem* item;
+
+    doBatchScale = !doBatchScale;
+
+    if(doBatchScale) do {
+        db_list->setCurrentIndex(db_filter_model->index(db_list->currentIndex().row() + 1, 0));
+        item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
+        if(item && item->images.size() > 0 && item->images.first()->scale() < 1) {
+            db_info_linkActivated(item->images[0]->path());
+            return;
+        }
+    }
+    while (item != NULL);
+
+    doBatchScale = false;
+}
 
 void Pisoar::fl_list_activated(const QModelIndex &index)
 {
@@ -162,7 +192,7 @@ void Pisoar::fl_list_selectionChanged(const QItemSelection &selection)
         fl_wip ->setEnabled(true);
         fl_done->setEnabled(true);
 
-        image->loadImage(fl_file->getPath());
+        image->loadImage(fl_file->path());
         fl_info_update();
 
         QList<QPair<Database::ObjectItem*, QVariant> > objects = db->getObjectsByFile(fl_file);
@@ -220,7 +250,7 @@ void Pisoar::fl_list_fill()
     for(QStringList::const_iterator i = files.constBegin(); i != files.constEnd(); i++) {
         Database::ImageFile * file = db->getFileByName(dir.filePath(*i));
 
-        if(file->getFlags() == Database::ImageFile::FLAG_DONE && !db->set.showDoneFiles)
+        if(file->flags() == Database::ImageFile::FLAG_DONE && !db->set.showDoneFiles)
             continue;
         fl_list_model->appendRow(new Database::ImageFile(*file));
     }
@@ -233,16 +263,13 @@ void Pisoar::fl_list_show(int state)
 }
 void Pisoar::db_new_clicked()
 {
-    if(db_name->text().isEmpty())
-        return;
-
     Database::ObjectItem * item = db->createObject(db_name->text());
     if(item)
-        db_list->setCurrentIndex(db->object_model.indexFromItem(item));
+        db_list->setCurrentIndex(db_filter_model->mapFromSource(item->index()));
 }
 void Pisoar::db_assign_clicked()
 {
-    Database::ObjectItem * item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_list->currentIndex());
+    Database::ObjectItem * item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
     QString name = item->text();
     QString path = db->getDirItems().filePath(name + "_" + QString::number(item->images.size()) + ".png");
     obj_selected.save(path, "PNG");
@@ -251,25 +278,25 @@ void Pisoar::db_assign_clicked()
     db_info_update();
 
     if(item->images.size() >= 3 || db->set.nextItemOnAssignView[item->images.size()-1])
-        db_list->setCurrentIndex(db->object_model.index(db_list->currentIndex().row() + 1, 0));
+        db_list->setCurrentIndex(db_list->model()->index(db_list->currentIndex().row() + 1, 0));
 }
 void Pisoar::db_remove_clicked()
 {
-    db->removeObject((Database::ObjectItem*)db->object_model.itemFromIndex(db_list->currentIndex()));
+    db->removeObject((Database::ObjectItem*)db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex())));
 }
 void Pisoar::db_clean_clicked()
 {
-    db->cleanObject((Database::ObjectItem*)db->object_model.itemFromIndex(db_list->currentIndex()));
+    db->cleanObject((Database::ObjectItem*)db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex())));
 }
 void Pisoar::db_generate_clicked()
 {
-    Database::ObjectItem * item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_list->currentIndex());
+    Database::ObjectItem * item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
     QString name = item->text();
 
     for(int i = 0; i < item->images.size(); i++) {
         QString path = db->getDirItems().filePath(name + "_" + QString::number(i) + ".png");
-        image->loadImage(item->images[i]->file->getPath());
-        QImage mask = image->objectMask(item->images[i]->object);
+        image->loadImage(item->images[i]->path());
+        QImage mask = image->objectMask(item->images[i]->object());
         image->pixmapFromMask(mask).save(path, "PNG");
     }
 }
@@ -298,10 +325,10 @@ void Pisoar::onCalibrateDone(QVariant scale)
             return;
         }
         do {
-            db_list->setCurrentIndex(db->object_model.index(db_list->currentIndex().row() + 1, 0));
-            item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_list->currentIndex());
-            if(item && item->images.size() > 0 && item->images.first()->file->getScale() < 1) {
-                db_info_linkActivated(item->images[0]->file->getPath());
+            db_list->setCurrentIndex(db_list->model()->index(db_list->currentIndex().row() + 1, 0));
+            item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
+            if(item && item->images.size() > 0 && item->images.first()->scale() < 1) {
+                db_info_linkActivated(item->images[0]->path());
                 break;
             }
         }
@@ -311,10 +338,10 @@ void Pisoar::onCalibrateDone(QVariant scale)
 void Pisoar::fl_info_update()
 {
     QString text;
-    if(fl_file->getScale() < 1)
+    if(fl_file->scale() < 1)
         text = QString("Bez měřítka");
     else
-        text = (QString("Měřítko: ") + QString::number(fl_file->getScale(), 'f', 2) + QString(" px/cm"));
+        text = (QString("Měřítko: ") + QString::number(fl_file->scale(), 'f', 2) + QString(" px/cm"));
 
     QList<QPair<Database::ObjectItem*, QVariant> > objects = db->getObjectsByFile(fl_file);
     for(int i = 0; i < objects.size(); i++)
@@ -342,22 +369,22 @@ void Pisoar::db_info_update()
         db_info->setText("--INFO--");
         return;
     }
-    item = (Database::ObjectItem*) db->object_model.itemFromIndex(index);
+    item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(index));
 
     QString text = "";
     int viewCount = item->images.size();
-    if(viewCount && item->images.first()->file->getScale() < 1)
+    if(viewCount && item->images.first()->scale() < 1)
         text += "BEZ MĚŘÍTKA!<br>";
 
     text += QString("Pohledy: ") + QString::number(viewCount);
     for(int i = 0; i < viewCount; i++)
-        text += QString("<br><a href=\"") + item->images[i]->file->getPath() + QString("\">") + item->images[i]->file->text() + QString("</a>");
+        text += QString("<br><a href=\"") + item->images[i]->path() + QString("\">") + item->images[i]->text() + QString("</a>");
 
     db_info->setText(text);
 }
 void Pisoar::fl_info_linkActivated(const QString & link)
 {
-    db_list->setCurrentIndex(db->object_model.findItems(link).first()->index());
+    db_list->setCurrentIndex(db_filter_model->mapFromSource(db->object_model.findItems(link).first()->index()));
 }
 void Pisoar::db_info_linkActivated(const QString & link)
 {
@@ -368,4 +395,20 @@ void Pisoar::db_info_linkActivated(const QString & link)
     if(!list.isEmpty())
         fl_list->setCurrentIndex(list.first()->index());
 }
-
+void Pisoar::filter_edit(const QString & str)
+{
+    if(db_filter->isChecked())
+        db_filter_model->setFilterWildcard(str);
+}
+void Pisoar::db_filter_toggled(bool checked)
+{
+    if(checked) {
+        db_filter_model->setFilterWildcard(db_name->text());
+    } else {
+        db_filter_model->setFilterWildcard("");
+    }
+}
+void Pisoar::db_sort_toggled(bool checked)
+{
+    db_filter_model->sort(checked ? 0 : 1);
+}

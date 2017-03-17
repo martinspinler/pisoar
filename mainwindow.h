@@ -27,6 +27,7 @@ class MainWindow : public QMainWindow
     QAction *menuGenerateAct;
     QAction *menuBatchAddAct;
     QAction *menuBatchScaleAct;
+    QAction *menuCheckIntegrity;
     QAction *menuSeparatorAct;
     QAction *menuRecentFileActs[MaxRecentFiles];
 
@@ -51,6 +52,7 @@ private:
     void onMenuToolsGenerateLayouts();
     void onMenuToolsBatchAdd();
     void onMenuToolsBatchScale();
+    void onMenuToolsCheckIntegrity();
     void onMenuToolsSettings();
     void onMenuToolsAbout();
 

@@ -9,11 +9,11 @@
 Kasuar::Kasuar(QWidget *parent)
     : QWidget(parent)
 {
-/*    filter = new QSortFilterProxyModel();
-    filter->setSourceModel(&db->object_model);*/
+    /*filter = new QSortFilterProxyModel();
+    filter->setSourceModel(&db->view_model);*/
 
     db_list = new QListView();
-    db_list->setModel(&db->object_model);
+    db_list->setModel(&db->view_model);
     db_list->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
     db_list->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -50,7 +50,6 @@ Kasuar::Kasuar(QWidget *parent)
 
     box_main = new QHBoxLayout();
     box_main->addLayout(box_database);
-    //box_main->addWidget(layout, 1);
     box_main->addLayout(box_middle, 1);
     box_main->addLayout(box_layout);
 
@@ -76,8 +75,8 @@ void Kasuar::db_add_clicked()
     QModelIndex index = db_list->currentIndex();
     if(!currentLayout || !index.isValid())
         return;
-    layout->addNewObject(db->createItem(currentLayout, (Database::ObjectItem*)db->object_model.itemFromIndex(index)));
-    db_list->setCurrentIndex(db->object_model.index(index.row() + 1, 0));
+    layout->addNewObject(db->createItem(currentLayout, (Database::ObjectView*)db->view_model.itemFromIndex(index)));
+    db_list->setCurrentIndex(db->view_model.index(index.row() + 1, 0));
 }
 void Kasuar::db_save_clicked()
 {    
@@ -120,15 +119,15 @@ void Kasuar::onLayoutRect()
 {
     QList<Database::LayoutItem*> selected = layout->getSelection();
     if(!selected.isEmpty())
-        layout->setSelectedBorder(!selected[0]->border);
+        layout->setSelectedBorder(!selected[0]->border());
 }
 void Kasuar::onLayoutRuler()
 {
     QList<Database::LayoutItem*> selected = layout->getSelection();
     if(!selected.isEmpty())
-        layout->setSelectedRuler(!selected[0]->ruler);
+        layout->setSelectedRuler(!selected[0]->ruler());
 }
 void Kasuar::db_sort_toggled(bool checked)
 {
-    db->object_model.sort(checked ? 0 : 1);
+    db->view_model.sort(checked ? 0 : 1);
 }
