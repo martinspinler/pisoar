@@ -18,11 +18,11 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
     view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
     db_filter   = new QLineEdit();
-    db_sort     = new QCheckBox("Řadit podle jména");
+    db_sort     = new QCheckBox("&Seřadit podle jména");
 
-    filter      = new QSortFilterProxyModel(this);
-    filter->setSourceModel(&db->object_model);
-    filter->setDynamicSortFilter(true);
+    db_filter_model = new QSortFilterProxyModel(this);
+    db_filter_model->setSourceModel(&db->object_model);
+    db_filter_model->setDynamicSortFilter(true);
 
     model_images = new QStandardItemModel(this);
     model_types = new QStandardItemModel(this);
@@ -30,7 +30,7 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
 
     db_list     = new QListView();
     db_list->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    db_list->setModel(filter);
+    db_list->setModel(db_filter_model);
 
     db_viewlist     = new QListView();
     db_viewlist->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -136,7 +136,7 @@ void Jaguar::setView(Database::ObjectView * objectView)
 
 void Jaguar::filter_edit(const QString & str)
 {
-    filter->setFilterWildcard(str);
+    db_filter_model->setFilterWildcard(str);
 }
 
 void Jaguar::db_sort_toggled(bool checked)
@@ -177,7 +177,7 @@ void Jaguar::db_selectionChanged(const QItemSelection &selected, const QItemSele
     Q_UNUSED(selected);
     Q_UNUSED(deselected);
 
-    QModelIndex objectIndex = filter->mapToSource(db_list->currentIndex());
+    QModelIndex objectIndex = db_filter_model->mapToSource(db_list->currentIndex());
     QModelIndex viewIndex;
     if(objectIndex.isValid()) {
         QString name = db->object_model.itemFromIndex(objectIndex)->text();

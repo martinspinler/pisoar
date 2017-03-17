@@ -15,7 +15,9 @@
 
 #include "settings.h"
 
-#define PISOAR_CURRENT_VERSION ((0) << 16 + (21))
+#define PISOAR_CURRENT_VERSION_MAJOR 0
+#define PISOAR_CURRENT_VERSION_MINOR 21
+#define PISOAR_CURRENT_VERSION ((PISOAR_CURRENT_VERSION_MAJOR << 16) + PISOAR_CURRENT_VERSION_MINOR)
 
 class Database : public QObject
 {
@@ -65,6 +67,8 @@ public:
         QString text()   {return m_file->text();}
     };
     class ObjectView : public QStandardItem {
+        friend class ObjectItem;
+
         QList<int> m_mapping;
         QList<int> m_rotation;
         int m_type;

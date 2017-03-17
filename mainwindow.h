@@ -58,6 +58,10 @@ private:
 
     void openDir(const QDir &name);
     void closeEvent(QCloseEvent * event); 
+
+public slots:
+    void onPisoarDBListActivated(const QModelIndex & index);
+    void onJaguarDBListActivated(const QModelIndex & index);
 };
 
 #endif // MAINWINDOW_H

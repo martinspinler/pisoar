@@ -58,8 +58,8 @@ Pisoar::Pisoar(QWidget *parent)
     db_preview->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     db_name     = new QLineEdit();
-    db_filter   = new QCheckBox("Filtrovat");
-    db_sort     = new QCheckBox("Řadit podle jména");
+    db_filter   = new QCheckBox("&Filtrovat");
+    db_sort     = new QCheckBox("&Seřadit podle jména");
 
     image       = new Image();
     image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);

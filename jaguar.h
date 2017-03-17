@@ -26,7 +26,9 @@ class Jaguar : public QWidget
 {
     Q_OBJECT
 
-    QSortFilterProxyModel * filter;
+    friend class MainWindow;
+
+    QSortFilterProxyModel * db_filter_model;
     QStandardItemModel * model_images;
     QStandardItemModel * model_types;
     QStandardItemModel * model_views;

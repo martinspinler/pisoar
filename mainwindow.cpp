@@ -76,6 +76,9 @@ MainWindow::MainWindow(QWidget *parent)
     /* Hide tabs when no database */
     tabs->hide();
 
+    connect(pisoar->db_list, &QListView::activated, this, &MainWindow::onPisoarDBListActivated);
+    connect(jaguar->db_list, &QListView::activated, this, &MainWindow::onJaguarDBListActivated);
+
     /* Main window */
     setWindowTitle("Pisoar - PIcture SOrter for ARchaelogy [*]");
     setCentralWidget(tabs);
@@ -253,4 +256,20 @@ void MainWindow::onMenuToolsCheckIntegrity()
             }
         }
     }
+}
+
+void MainWindow::onPisoarDBListActivated(const QModelIndex & index)
+{
+    QModelIndex db_index = pisoar->db_filter_model->mapToSource(index);
+    QModelIndex fg_index = jaguar->db_filter_model->mapFromSource(db_index);
+    tabs->setCurrentIndex(1);
+    jaguar->db_list->selectionModel()->setCurrentIndex(fg_index, QItemSelectionModel::ClearAndSelect);
+}
+
+void MainWindow::onJaguarDBListActivated(const QModelIndex & index)
+{
+    QModelIndex db_index = jaguar->db_filter_model->mapToSource(index);
+    QModelIndex fg_index = pisoar->db_filter_model->mapFromSource(db_index);
+    tabs->setCurrentIndex(0);
+    pisoar->db_list->selectionModel()->setCurrentIndex(fg_index, QItemSelectionModel::ClearAndSelect);
 }

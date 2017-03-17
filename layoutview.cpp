@@ -222,8 +222,8 @@ void LayoutTopBottomView::updateObject()
         height[i]   = br.height();
     }
 
-    pixitem[0].moveBy(childPadding, childPadding + (!swapside ? height[TOP] + space : 0));
-    pixitem[1].moveBy(childPadding, childPadding + ( swapside ? height[TOP] + space : 0));
+    pixitem[0].moveBy(childPadding, childPadding + ( swapside ? height[TOP] + space : 0));
+    pixitem[1].moveBy(childPadding, childPadding + (!swapside ? height[TOP] + space : 0));
 
     childWidth  = width[0];
     childHeight = height[0] + space + height[1];

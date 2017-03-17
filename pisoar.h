@@ -29,6 +29,8 @@ class Pisoar : public QWidget
 {
     Q_OBJECT
 
+    friend class MainWindow;
+
     QDir dir_list;
 
     QStandardItemModel * fl_list_model;

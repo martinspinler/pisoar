@@ -351,13 +351,17 @@ Database::ObjectImage* Database::ObjectItem::createImage(ImageFile * file, QVari
     case 2: setIcon(f->icon_2); break;
     default:setIcon(f->icon_image); break;
     }
+    foreach(Database::ObjectView* view, views) {
+        view->m_mapping.append(view->m_mapping.size());
+        view->m_rotation.append(view->m_mapping.size());
+    }
 
     db->setModified();
     return image;
 }
 bool Database::ObjectItem::_canRename(QString newName)
 {
-    return !(newName.isEmpty() || newName == text());
+    return !(newName.isEmpty());
 }
 QString Database::ObjectItem::_getNewFilename(QString newName)
 {
