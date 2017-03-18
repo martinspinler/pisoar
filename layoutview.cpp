@@ -300,6 +300,9 @@ void LayoutTopView::updateObject()
 
     QRectF br;
     br = doUniversalTransform(i, scale, layoutItem->objectView()->rotation(i));
+
+    pixitem[0].moveBy(childPadding, childPadding);
+
     childWidth  = br.width();
     childHeight = br.height();
 

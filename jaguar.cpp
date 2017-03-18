@@ -141,7 +141,7 @@ void Jaguar::filter_edit(const QString & str)
 
 void Jaguar::db_sort_toggled(bool checked)
 {
-    db->view_model.sort(checked ? 0 : 1);
+    db_filter_model->sort(checked ? 0 : 1);
 }
 
 void Jaguar::images_move_clicked()
@@ -221,7 +221,7 @@ void Jaguar::view_selectionChanged(const QItemSelection &selected, const QItemSe
     foreach(Database::ObjectImage* image, objectView->item.images) {
         Q_UNUSED(image);
         QList <QStandardItem*> list;
-        QString path = db->getDirItems().filePath(objectView->name() + "_" + QString::number(itemIndex) + ".png");
+        QString path = db->getDirItems().filePath(objectView->item.filename() + "_" + QString::number(itemIndex) + ".png");
         QStandardItem * image_item = new QStandardItem(QString::number(itemIndex++));
         QPixmap pic = QPixmap(path).scaledToWidth(list_images->width() - 50);
         image_item->setData(pic, Qt::DecorationRole);

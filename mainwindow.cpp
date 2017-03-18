@@ -263,6 +263,7 @@ void MainWindow::onPisoarDBListActivated(const QModelIndex & index)
     QModelIndex db_index = pisoar->db_filter_model->mapToSource(index);
     QModelIndex fg_index = jaguar->db_filter_model->mapFromSource(db_index);
     tabs->setCurrentIndex(1);
+    jaguar->db_filter_model->setFilterWildcard("");
     jaguar->db_list->selectionModel()->setCurrentIndex(fg_index, QItemSelectionModel::ClearAndSelect);
 }
 
@@ -271,5 +272,6 @@ void MainWindow::onJaguarDBListActivated(const QModelIndex & index)
     QModelIndex db_index = jaguar->db_filter_model->mapToSource(index);
     QModelIndex fg_index = pisoar->db_filter_model->mapFromSource(db_index);
     tabs->setCurrentIndex(0);
+    pisoar->db_filter_model->setFilterWildcard("");
     pisoar->db_list->selectionModel()->setCurrentIndex(fg_index, QItemSelectionModel::ClearAndSelect);
 }

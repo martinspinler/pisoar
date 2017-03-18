@@ -353,7 +353,7 @@ Database::ObjectImage* Database::ObjectItem::createImage(ImageFile * file, QVari
     }
     foreach(Database::ObjectView* view, views) {
         view->m_mapping.append(view->m_mapping.size());
-        view->m_rotation.append(view->m_mapping.size());
+        view->m_rotation.append(0);
     }
 
     db->setModified();
@@ -652,6 +652,10 @@ bool Database::cleanObject(ObjectItem* item)
         dir_items.remove(item->filename() + "_" + QString::number(i) + ".png");
         delete item->images[i];
         setModified();
+    }
+    for(int i = 0; i < item->images.size(); i++) {
+        item->views[i]->m_mapping.clear();
+        item->views[i]->m_rotation.clear();
     }
     item->images.clear();
     item->setIcon(f->icon_0);

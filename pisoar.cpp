@@ -291,10 +291,9 @@ void Pisoar::db_clean_clicked()
 void Pisoar::db_generate_clicked()
 {
     Database::ObjectItem * item = (Database::ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
-    QString name = item->text();
 
     for(int i = 0; i < item->images.size(); i++) {
-        QString path = db->getDirItems().filePath(name + "_" + QString::number(i) + ".png");
+        QString path = db->getDirItems().filePath(item->filename() + "_" + QString::number(i) + ".png");
         image->loadImage(item->images[i]->path());
         QImage mask = image->objectMask(item->images[i]->object());
         image->pixmapFromMask(mask).save(path, "PNG");

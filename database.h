@@ -68,6 +68,7 @@ public:
     };
     class ObjectView : public QStandardItem {
         friend class ObjectItem;
+        friend class Database;
 
         QList<int> m_mapping;
         QList<int> m_rotation;
