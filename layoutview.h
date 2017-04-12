@@ -9,9 +9,9 @@
 #include <QGraphicsLineItem>
 #include <QVariant>
 
-class Database;
-
 #include "database.h"
+
+namespace LayoutViews {
 
 class LayoutRuler : public QGraphicsItemGroup {
 public:
@@ -41,11 +41,11 @@ public:
     QGraphicsTextItem * rindex;
     QGraphicsRectItem * rrect;
 
-    Database::LayoutItem * layoutItem;
+    LayoutItem * layoutItem;
     virtual void    updateObject();
 
 public:
-    LayoutView(Database::LayoutItem *li, int pixmaps = 0);
+    LayoutView(LayoutItem *li, int pixmaps = 0);
     virtual ~LayoutView();
 
     virtual void    setObjectScale(float scale);
@@ -55,14 +55,20 @@ public:
     virtual void    addToGroup(QGraphicsItem*i) {i->setParentItem(this);}
     QVariant        itemChange(GraphicsItemChange change, const QVariant &value);
 
-    static LayoutView * createView(Database::LayoutItem* item);
+    void setBorder(bool border) {layoutItem->setBorder(border);updateObject();}
+    void setRuler(bool ruler)   {layoutItem->setRuler(ruler);updateObject();}
+    bool border()               {return layoutItem->border();}
+    bool ruler()                {return layoutItem->ruler();}
+
+    void link(LayoutPage*page)  {layoutItem->link(page);}
+    void unlink(LayoutPage*page){layoutItem->unlink(page);}
 };
 
 class LayoutTopSideView: public LayoutView {
     QGraphicsLineItem * rlinetop;
     QGraphicsLineItem * rlinebot;
 public:
-    LayoutTopSideView(Database::LayoutItem*item);
+    LayoutTopSideView(LayoutItem*item);
     void updateObject();
 };
 
@@ -70,7 +76,7 @@ class LayoutTopBottomView: public LayoutView {
     QGraphicsLineItem * rlineleft;
     QGraphicsLineItem * rlineright;
 public:
-    LayoutTopBottomView(Database::LayoutItem*item);
+    LayoutTopBottomView(LayoutItem*item);
     void updateObject();
 };
 
@@ -80,14 +86,15 @@ class LayoutTopSideFrontView: public LayoutView {
     QGraphicsLineItem * rlinetop;
     QGraphicsLineItem * rlinebot;
 public:
-    LayoutTopSideFrontView(Database::LayoutItem*item);
+    LayoutTopSideFrontView(LayoutItem*item);
     void updateObject();
 };
 
 class LayoutTopView: public LayoutView {
 public:
-    LayoutTopView(Database::LayoutItem*item);
+    LayoutTopView(LayoutItem*item);
     void updateObject();
 };
 
+}
 #endif // LAYOUTVIEW_H

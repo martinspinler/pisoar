@@ -75,12 +75,12 @@ void Kasuar::db_add_clicked()
     QModelIndex index = db_list->currentIndex();
     if(!currentLayout || !index.isValid())
         return;
-    layout->addNewObject(db->createItem(currentLayout, (Database::ObjectView*)db->view_model.itemFromIndex(index)));
+    layout->addNewObject(currentLayout->createItem((ObjectView*)db->view_model.itemFromIndex(index)));
     db_list->setCurrentIndex(db->view_model.index(index.row() + 1, 0));
 }
 void Kasuar::db_save_clicked()
 {    
-    layout->exportToImage(db->getDirLayouts().filePath(currentLayout->text() + QString(".png")));
+    layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + QString(".png")));
 }
 void Kasuar::bakeLayouts()
 {
@@ -90,8 +90,8 @@ void Kasuar::bakeLayouts()
     progress.update();
     for(int i = 0; i < db->layout_model.rowCount(); i++) {
         progress.setValue(i);
-        layout_list->setCurrentIndex(db->layout_model.index(i,0));
-        layout->exportToImage(db->getDirLayouts().filePath(currentLayout->text() + QString(".png")));
+        layout_list->setCurrentIndex(db->layout_model.index(i, 0));
+        layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + QString(".png")));
 
         if (progress.wasCanceled())
             break;
@@ -102,30 +102,27 @@ void Kasuar::bakeLayouts()
 void Kasuar::layout_itemSelectionChanged(const QItemSelection &selection)
 {
     Q_UNUSED(selection);
+
     QModelIndex index = layout_list->currentIndex();
     if(!index.isValid())
         return;
 
-    currentLayout = (Database::LayoutPage*) db->layout_model.itemFromIndex(index);
+    currentLayout = (LayoutPage*) db->layout_model.itemFromIndex(index);
     layout->loadPage(currentLayout);
 }
 void Kasuar::layout_add_clicked()
 {
     int count = db->layout_model.rowCount();
-    currentLayout = db->createLayout(QString::number(count+1));
-    layout_list->setCurrentIndex(db->layout_model.index(count, 0));
+    currentLayout = db->createLayout(QString::number(count + 1));
+    layout_list->setCurrentIndex(currentLayout->index());
 }
 void Kasuar::onLayoutRect()
 {
-    QList<Database::LayoutItem*> selected = layout->getSelection();
-    if(!selected.isEmpty())
-        layout->setSelectedBorder(!selected[0]->border());
+    layout->toggleBorder();
 }
 void Kasuar::onLayoutRuler()
 {
-    QList<Database::LayoutItem*> selected = layout->getSelection();
-    if(!selected.isEmpty())
-        layout->setSelectedRuler(!selected[0]->ruler());
+    layout->toggleRuler();
 }
 void Kasuar::db_sort_toggled(bool checked)
 {

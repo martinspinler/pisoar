@@ -19,13 +19,13 @@ Settings::Settings(QWidget *parent) : QDialog(parent)
     layout          = new QGridLayout();
 
     fl_show         = new QCheckBox("Zobrazit hotové soubory");
-    db_align        = new QLineEdit();
+    /*db_align        = new QLineEdit();
     db_resolution   = new QLineEdit();
     db_edgeTop      = new QLineEdit();
     db_edgeBottom   = new QLineEdit();
     db_edgeSides    = new QLineEdit();
     db_pageWidth    = new QLineEdit();
-    db_pageHeight   = new QLineEdit();
+    db_pageHeight   = new QLineEdit();*/
     db_calibSize    = new QLineEdit();
     db_layoutText   = new QLineEdit();
 

@@ -8,10 +8,14 @@
 #include <QPixmap>
 #include <QGraphicsScene>
 #include <QGraphicsLineItem>
+#include <QGraphicsPixmapItem>
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QBitmap>
 #include <QVariant>
+
+#include "database.h"
+#include "layoutview.h"
 
 class Image : public QGraphicsView
 {
@@ -20,39 +24,40 @@ class Image : public QGraphicsView
 public:
     enum Mode {MODE_HAND, MODE_MASK, MODE_RECT, MODE_SCALE, MODE_COLOR};
 private:
-    struct s_check{int x; int y;};
 
-    QGraphicsScene scene;
-    QPixmap pixmap;
+    uint m_skipcolor;
+    Mode m_mode;
 
-    uint skipcolor;
+    QGraphicsScene m_scene;
 
-    QGraphicsLineItem * scale_line;
-    QPoint ptMouseDown;
+    QPoint m_ptMouseDown;
 
-    Mode mode;
-    QPixmap pixmap_object;
+    ImageFile *m_file;
+    QPixmap m_pixmap;
+    QGraphicsLineItem * m_scaleLineItem;
+    QGraphicsPixmapItem * m_pixmapItem;
 
 public:
-
     Image();
+    virtual ~Image();
 
-    void setMode(Mode m);
     void clear();
-    void loadImage(QString filename);
-    void addObject(QVariant obj, QString name);
+    void loadFile(ImageFile* image);
+    void setMode(Mode mode);
+    void updateObjects();
 
     void wheelEvent(QWheelEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 
-    QImage objectMask(QVariant obj);
-    QPixmap pixmapFromMask(QImage &mask);
+    void addObjectImage(ObjectImage *image);
+
+    const QPixmap & pixmap() {return m_pixmap;}
 
 signals:
     void calibrateDone(float length);
-    void objectSelected(QVariant obj);
+    void objectSelected(ObjectImage * image);
 };
 
 #endif // IMAGE_H

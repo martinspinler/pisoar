@@ -111,7 +111,7 @@ void MainWindow::onMenuFileNew()
     }
 
     if(db->create(fd.directory())) {
-        pisoar->setCurrentDir(db->getDirBase());
+        pisoar->setCurrentDir(db->dirBase());
         tabs->show();
     }
     else
@@ -130,7 +130,7 @@ void MainWindow::openDir(const QDir & dir)
 {
     if(db->open(dir)) {
         setCurrentFile(dir.path());
-        pisoar->setCurrentDir(db->getDirBase());
+        pisoar->setCurrentDir(db->dirBase());
         tabs->show();
     }
     else
@@ -175,10 +175,21 @@ void MainWindow::onMenuToolsBatchAdd()
     id.setLabelText("Vložte názvy objektů, každý na samostatný řádek");
     id.setOption(QInputDialog::UsePlainTextEditForTextInput);
     id.exec();
+
+    QStringList errors;
     QStringList lines = id.textValue().split("\n");
+    lines.removeAll("");
+
     foreach (QString line, lines){
-        if(!line.isEmpty())
+        try {
             db->createObject(line);
+        } catch (QString & e) {
+            Q_UNUSED(e);
+            errors += line;
+        }
+    }
+    if(!errors.isEmpty()) {
+        QMessageBox(QMessageBox::Warning, "Chyba", "Tyto objekty se nepodařilo vytvořit:\n" + errors.join("\n")).exec();
     }
 }
 
@@ -248,9 +259,9 @@ void MainWindow::updateRecentFileActions()
 void MainWindow::onMenuToolsCheckIntegrity()
 {
     for(int i = 0; i < db->object_model.rowCount(); i++) {
-        Database::ObjectItem * item = (Database::ObjectItem *) db->object_model.item(i);
+        ObjectItem * item = (ObjectItem *) db->object_model.item(i);
         for(int j = 0; j < item->images.size(); j++) {
-            QFile file(db->getDirBase().filePath(item->images[j]->path()));
+            QFile file(db->dirBase().filePath(item->images[j]->path()));
             if(!file.open(QFile::OpenModeFlag::ReadOnly)) {
                 qInfo() << "Missing " << item->images[j]->path() << " for item " << item->text();
             }

@@ -40,7 +40,7 @@ class Kasuar : public QWidget
     QPushButton *layout_add;
     QPushButton *layout_save;
 
-    Database::LayoutPage * currentLayout;
+    LayoutPage * currentLayout;
     QSortFilterProxyModel * filter;
 
 public:

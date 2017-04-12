@@ -12,6 +12,7 @@
 
 #include "layout.h"
 #include "factory.h"
+#include "layoutviewfactory.h"
 
 Layout::Layout()
 {
@@ -75,8 +76,9 @@ void Layout::exportToImage(QString filename)
     edgeRect->show();
     QApplication::restoreOverrideCursor();
 }
-void Layout::loadPage(Database::LayoutPage *page)
+void Layout::loadPage(LayoutPage *page)
 {
+    LayoutView * view;
     clearLayout();
 
     currentLayout = page;
@@ -84,14 +86,16 @@ void Layout::loadPage(Database::LayoutPage *page)
         return;
 
     for(int i = 0; i < currentLayout->list_items.size(); i++) {
-        createObject(currentLayout->list_items[i]);
+        view = createObject(currentLayout->list_items[i]);
+        view->link(page);
     }
 }
 
-LayoutView* Layout::createObject(Database::LayoutItem *item)
+LayoutView* Layout::createObject(LayoutItem *item)
 {
+    LayoutViewFactory f;
     LayoutView * view;
-    view = LayoutView::createView(item);
+    view = f.newLayoutView(item);
     view->setFlag(LayoutView::ItemIsSelectable);
     view->setFlag(LayoutView::ItemIsMovable);
     view->setFlag(LayoutView::ItemSendsScenePositionChanges);
@@ -118,14 +122,7 @@ void Layout::updateText()
     text_objectList->setPos(0, paperh - text_objectList->boundingRect().height());
 }
 
-void Layout::updateObject(Database::LayoutItem *layoutItem)
-{
-    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
-        if((*i)->layoutItem == layoutItem)
-            (*i)->updateObject();
-    }
-}
-void Layout::addNewObject(Database::LayoutItem *item)
+void Layout::addNewObject(LayoutItem *item)
 {
     float left = 0, right = paperw / 2;
     float lefty = 0;
@@ -133,15 +130,15 @@ void Layout::addNewObject(Database::LayoutItem *item)
     float righty = 0;
     float x = 0, y = 0;
 
-    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
+    foreach(LayoutView * object, objects) {
         if(x == left) {
             x = right;
-            lefty = (*i)->rrect->sceneBoundingRect().bottom();
-            leftytop = (*i)->rrect->sceneBoundingRect().top();
+            lefty = object->rrect->sceneBoundingRect().bottom();
+            leftytop = object->rrect->sceneBoundingRect().top();
         }
         else {
             x = left;
-            righty = (*i)->rrect->sceneBoundingRect().bottom();
+            righty = object->rrect->sceneBoundingRect().bottom();
         }
     }
     y = lefty > righty ? lefty : righty;
@@ -158,9 +155,6 @@ void Layout::addNewObject(Database::LayoutItem *item)
     y = ceil(y/alignment)*alignment;
 
     LayoutView* object = createObject(item);
-    if(!object)
-        return;
-
     object->setPos(QPointF(x,y));
 
     scene->clearSelection();
@@ -168,62 +162,44 @@ void Layout::addNewObject(Database::LayoutItem *item)
 }
 void Layout::wheelEvent(QWheelEvent *event)
 {
-    float delta = event->angleDelta().y();
+    double scaleFactor = event->delta() > 0 ? 1.25 : 1 / 1.25;
 
     if(event->modifiers() & Qt::ControlModifier) {
         foreach (QGraphicsItem *item, scene->selectedItems()) {
             LayoutView * view = (LayoutView*) item;
             /* TODO: scale selected and move to center of selection */
 
-            view->setObjectScale(view->objectScale() * (delta > 0 ? 1.25 : 0.8));
+            view->setObjectScale(view->objectScale() * scaleFactor);
         }
     }
     else {
-        setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-        double scaleFactor = 1.25;
-        if(event->delta() > 0)
-            scale(scaleFactor, scaleFactor);
-        else
-            scale(1.0 / scaleFactor, 1.0 / scaleFactor);
+        scale(scaleFactor, scaleFactor);
     }
 }
 
-void Layout::setSelectedBorder(bool border)
+void Layout::toggleBorder()
 {
-    foreach (QGraphicsItem *item, scene->selectedItems()) {
+    QList<QGraphicsItem*> selected = scene->selectedItems();
+    if(selected.isEmpty())
+        return;
+    bool border = !((LayoutView*)selected[0])->border();
+    foreach (QGraphicsItem *item, selected) {
         LayoutView * view = (LayoutView*) item;
-        view->layoutItem->setBorder(border);
-        view->updateObject();
+        view->setBorder(border);
         db->setModified();
     }
 }
-void Layout::setSelectedRuler(bool ruler)
+void Layout::toggleRuler()
 {
-    foreach (QGraphicsItem *item, scene->selectedItems()) {
+    QList<QGraphicsItem*> selected = scene->selectedItems();
+    if(selected.isEmpty())
+        return;
+    bool ruler = !((LayoutView*)selected[0])->ruler();
+    foreach (QGraphicsItem *item, selected) {
         LayoutView * view = (LayoutView*) item;
-        view->layoutItem->setRuler(ruler);
-        view->updateObject();
+        view->setRuler(ruler);
         db->setModified();
     }
-}
-
-LayoutView * Layout::findViewByItem(Database::LayoutItem * layoutItem)
-{
-    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++) {
-        if((*i)->layoutItem == layoutItem)
-            return (*i);
-    }
-    return NULL;
-}
-
-const QList<Database::LayoutItem*> Layout::getSelection()
-{
-    QList<Database::LayoutItem*> list;
-    foreach (QGraphicsItem *item, scene->selectedItems()) {
-        LayoutView * view = (LayoutView*) item;
-        list.append(view->layoutItem);
-    }
-    return list;
 }
 
 void Layout::keyPressEvent(QKeyEvent * event)
@@ -233,10 +209,10 @@ void Layout::keyPressEvent(QKeyEvent * event)
     case Qt::Key_Delete:
         foreach (QGraphicsItem *item, scene->selectedItems()) {
             LayoutView * view = (LayoutView*) item;
-            Database::LayoutItem * layoutItem = view->layoutItem;
+            LayoutItem * layoutItem = view->layoutItem;
             scene->removeItem(view);
             objects.removeAll(view);
-            db->removeItem(currentLayout, layoutItem);
+            currentLayout->removeItem(layoutItem);
         }
         updateText();
         break;

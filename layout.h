@@ -18,6 +18,8 @@
 #include "database.h"
 #include "layoutview.h"
 
+using namespace LayoutViews;
+
 class Layout : public QGraphicsView
 {  
     Q_OBJECT
@@ -30,30 +32,27 @@ private:
     QGraphicsRectItem * edgeRect;
     QGraphicsRectItem * mainRect;
 
-    Database::LayoutPage * currentLayout;
-
-    LayoutView * findViewByItem(Database::LayoutItem * layoutItem);
+    LayoutPage * currentLayout;
 
 public:
     Layout();
 
     void clearLayout();
-    void loadPage(Database::LayoutPage * page);
+    void loadPage(LayoutPage * page);
     void exportToImage(QString filename);
 
-    LayoutView* createObject(Database::LayoutItem *item);
-    void addNewObject(Database::LayoutItem *item);
-    void updateObject(Database::LayoutItem* group);
+    LayoutView* createObject(LayoutItem *item);
+    void addNewObject(LayoutItem *item);
 
     void updateText();
     void wheelEvent(QWheelEvent *event);
-    void setSelectedBorder(bool border);
-    void setSelectedRuler(bool ruler);
+    void toggleBorder();
+    void toggleRuler();
 
     void keyPressEvent(QKeyEvent * event);
-    void bakeLayout(Database::LayoutPage* page);
+    void bakeLayout(LayoutPage* page);
 
-    const QList<Database::LayoutItem*> getSelection();
+    const QList<LayoutItem*> getSelection();
 
     int edgew;
     int edgeh;

@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QToolBar>
+#include <QSlider>
 
 #include <QList>
 #include <QString>
@@ -36,10 +37,11 @@ class Pisoar : public QWidget
     QStandardItemModel * fl_list_model;
     QSortFilterProxyModel * db_filter_model;
 
-    Database::ImageFile* fl_file;
-    Database::ImageFile* mask_file;
-    QPixmap obj_selected;
-    QVariant selectedView;
+    ImageFile* fl_file;
+    QPixmap m_originalPixmap;
+    QPixmap m_selectedPixmap;
+    ObjectImage *m_selectedImage;
+    QGraphicsPixmapItem * m_previewItem;
 
     /* Layout - filelist */
     QListView   *fl_list;
@@ -49,7 +51,7 @@ class Pisoar : public QWidget
     QPushButton *fl_done;
 
     /* Layout - image */
-    Image       *image;
+    Image       *m_image;
     QToolBar    *image_toolbar;
 
     /* Layout - database */
@@ -57,14 +59,16 @@ class Pisoar : public QWidget
     QListView   *db_list;
     QPushButton *db_new;
     QPushButton *db_assign;
-    QPushButton *db_remove;
+    QPushButton *db_delete;
     QPushButton *db_generate;
     QPushButton *db_clean;
     QString     *db_id;
-    QLabel      *db_preview;
+    QSlider     *db_rotate;
+    QGraphicsView *db_preview;
     QLabel      *db_info;
     QCheckBox   *db_sort;
     QCheckBox   *db_filter;
+
 
     /* Layout - containers */
     QHBoxLayout *box_main;
@@ -74,7 +78,6 @@ class Pisoar : public QWidget
 
     bool        doBatchScale;
 
-
 public:
     Pisoar(QWidget *parent = 0);
     ~Pisoar();
@@ -82,10 +85,10 @@ public:
     void setCurrentDir(QDir dir);
     void batchScale();
 
+private:
     void fl_list_selectionChanged(const QItemSelection &selection);
     void fl_list_activated(const QModelIndex &index);
     void fl_list_fill();
-    void fl_show_stateChanged(int state);
     void fl_setFileFlag_clicked();
     void fl_info_linkActivated(const QString & link);
     void fl_info_update();
@@ -94,12 +97,11 @@ public:
     void db_list_itemChanged(QStandardItem* item);
     void db_list_selectionChanged(const QItemSelection &selection);
     void db_list_fill();
-    void filter_edit(const QString &str);
     void db_sort_toggled(bool checked);
     void db_filter_toggled(bool checked);
+    void db_filter_edit(const QString &str);
+    void db_rotated(int value);
 
-    void db_save_clicked();
-    void db_kasuar_clicked();
     void db_new_clicked();
     void db_assign_clicked();
     void db_remove_clicked();
@@ -108,12 +110,12 @@ public:
     void db_info_update();
     void db_info_linkActivated(const QString & link);
 
-    void onImageSetToolHand() {image->setMode(Image::MODE_HAND);}
-    void onImageSetToolMask() {image->setMode(Image::MODE_MASK);}
-    void onImageSetToolRect() {image->setMode(Image::MODE_RECT);}
-    void onImageSetToolScale(){image->setMode(Image::MODE_SCALE);}
-    void onImageSetToolColor(){image->setMode(Image::MODE_COLOR);}
-    void onObjectSelected(QVariant obj);
+    void onImageSetToolHand() {m_image->setMode(Image::MODE_HAND);}
+    void onImageSetToolMask() {m_image->setMode(Image::MODE_MASK);}
+    void onImageSetToolRect() {m_image->setMode(Image::MODE_RECT);}
+    void onImageSetToolScale(){m_image->setMode(Image::MODE_SCALE);}
+    void onImageSetToolColor(){m_image->setMode(Image::MODE_COLOR);}
+    void onObjectSelected(ObjectImage *image);
     void onCalibrateDone(QVariant scale);
 };
 
