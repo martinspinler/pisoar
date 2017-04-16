@@ -1,4 +1,6 @@
 #include <QGuiApplication>
+#include <QMessageBox>
+#include <QActionGroup>
 
 #include "jaguar.h"
 #include "layout.h"
@@ -14,9 +16,9 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
     scene       = new QGraphicsScene();
     view        = new JaguarView();
     view->setScene(scene);
-    view->setDragMode(QGraphicsView::ScrollHandDrag);
-    view->setResizeAnchor(QGraphicsView::AnchorViewCenter);
-    view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    view->setMode(JaguarView::MODE_HAND);
+
+    image_toolbar = new QToolBar();
 
     db_filter   = new QLineEdit();
     db_sort     = new QCheckBox("&Seřadit podle jména");
@@ -56,24 +58,35 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
     images_movedown     = new QPushButton("v");
     images_rotateleft   = new QPushButton(f->icon_rleft, "");
     images_rotateright  = new QPushButton(f->icon_rright, "");
+    images_setScaleFrom = new QPushButton("M");
 
     box_imagesButtons   = new QHBoxLayout();
     box_imagesButtons->addWidget(images_moveup);
     box_imagesButtons->addWidget(images_movedown);
     box_imagesButtons->addWidget(images_rotateleft);
     box_imagesButtons->addWidget(images_rotateright);
+    box_imagesButtons->addWidget(images_setScaleFrom);
 
     box_images = new QVBoxLayout();
     box_images->addWidget(list_types, 1);
     box_images->addWidget(list_images, 2);
     box_images->addLayout(box_imagesButtons);
 
+    box_image = new QVBoxLayout();
+    box_image->addWidget(image_toolbar);
+    box_image->addWidget(view, 1);
+
     box_main = new QHBoxLayout();
     box_main->addLayout(box_database);
-    box_main->addWidget(view, 1);
+    box_main->addLayout(box_image, 1);
     box_main->addLayout(box_images);
 
     db_viewlist->setVisible(false);
+
+    QAction * a;
+    QActionGroup *actionGroup = new QActionGroup(image_toolbar);
+    a = image_toolbar->addAction(f->icon_hand,  "Ručička",  this, &Jaguar::onImageSetToolHand);  a->setCheckable(true); a->setActionGroup(actionGroup); a->setChecked(true);
+    a = image_toolbar->addAction(f->icon_ruler, "Pravítko", this, &Jaguar::onImageSetToolRuler); a->setCheckable(true); a->setActionGroup(actionGroup);
 
     connect(db_filter,      &QLineEdit::textChanged, this, &Jaguar::db_filter_edit);
     connect(db_sort,        &QCheckBox::toggled,    this, &Jaguar::db_sort_toggled);
@@ -85,6 +98,9 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
     connect(images_movedown,    &QPushButton::clicked, this, &Jaguar::images_move_clicked);
     connect(images_rotateleft,  &QPushButton::clicked, this, &Jaguar::images_rotate_clicked);
     connect(images_rotateright, &QPushButton::clicked, this, &Jaguar::images_rotate_clicked);
+    connect(images_setScaleFrom,&QPushButton::clicked, this, &Jaguar::images_setScaleFrom_clicked);
+
+    connect(view,      &JaguarView::rulerDone, this, &Jaguar::onRulerDone);
 
     setLayout(box_main);
 
@@ -188,13 +204,14 @@ void Jaguar::view_selectionChanged(const QItemSelection &selected, const QItemSe
     foreach(ObjectImage* image, m_objectView->item.images) {
         Q_UNUSED(image);
         QList <QStandardItem*> list;
-        itemIndex = m_objectView->mapping(i++);
+        itemIndex = m_objectView->mapping(i);
         QString path = m_objectView->item.imagePath(itemIndex);
-        QStandardItem * image_item = new QStandardItem(QString::number(itemIndex));
+        QStandardItem * image_item = new QStandardItem(QString::number(itemIndex) + QString((m_objectView->scaleFrom() == i) ? "M" : ""));
         QPixmap pic = QPixmap(path).scaledToWidth(list_images->width() - 50);
         image_item->setData(pic, Qt::DecorationRole);
         list.append(image_item);
         model_images->appendRow(list);
+        i++;
     }
 
     setView(m_objectView);
@@ -252,4 +269,23 @@ void Jaguar::images_rotate_clicked()
         updateView();
         db->setModified();
     }
+}
+void Jaguar::images_setScaleFrom_clicked()
+{
+    int index;
+    QModelIndexList indexList = list_images->selectionModel()->selectedIndexes();
+
+    if(m_layoutItem && m_layoutItem->objectView() && !indexList.isEmpty()) {
+        index = indexList.at(0).row();
+        m_layoutItem->objectView()->setScaleFrom(index);
+        setView(m_objectView);
+    }
+}
+void Jaguar::onRulerDone(float scale)
+{
+    QMessageBox mb;
+    float ppm = db->set.ppm;
+    float sc = m_layoutItem->scale();
+    mb.setText(QString("Naměřená velikost: %1cm").arg(scale / ppm / sc / 10));
+    mb.exec();
 }

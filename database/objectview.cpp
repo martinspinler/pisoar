@@ -23,6 +23,11 @@ ObjectView::ObjectView(const QJsonObject & obj, ObjectItem & item) : item(item)
     else
         m_type = obj["type"].toInt();
 
+    if(!obj.contains("scalefrom"))
+        m_scaleFrom = 0;
+    else
+        m_scaleFrom = obj["scalefrom"].toInt();
+
     // Old DB format compatibility
     if(!obj.contains("mapping")) {
         for(int i = 0; i < item.images.size(); i++) {
@@ -57,6 +62,7 @@ QJsonObject ObjectView::toJsonObject()
     obj["type"] = m_type;
     obj["mapping"] = mapping;
     obj["rotation"] = rotation;
+    obj["scalefrom"] = m_scaleFrom;
     return obj;
 }
 ObjectView::ObjectView(ObjectItem & item, QString name) : item(item)
@@ -69,6 +75,7 @@ ObjectView::ObjectView(ObjectItem & item, QString name) : item(item)
         m_rotation.append(0);
     }
     m_pagesCount = 0;
+    m_scaleFrom = 0;
 
     setIcon(f->icon_image);
 }

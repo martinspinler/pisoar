@@ -12,6 +12,7 @@ class ObjectView : public QStandardItem {
     int m_type;
     QList<int> m_mapping;
     QList<int> m_rotation;
+    int m_scaleFrom;
     int m_pagesCount;
     //QList<LayoutPage*> m_layoutPages;
 
@@ -27,8 +28,10 @@ public:
     void setType(int type)                      {m_type = type;}
     void setMapping(int index, int moveto);
     void setRotation(int index, int angle)      {m_rotation[index] = angle;}
+    void setScaleFrom(int index)                {m_scaleFrom = index;}
     int mapping(int index)                      {return m_mapping[index];}
     int rotation(int index)                     {return m_rotation[index];}
+    int scaleFrom()                             {return m_scaleFrom;}
     QString name()                              {return item.text();}
     int pagesCount()                            {return m_pagesCount;}
 };

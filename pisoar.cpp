@@ -382,7 +382,7 @@ void Pisoar::onCalibrateDone(QVariant scale)
 void Pisoar::fl_info_update()
 {
     QString text;
-    if(fl_file == NULL) {
+    if(fl_file != NULL) {
         if(fl_file->scale() < 1)
             text = QString("Bez měřítka");
         else

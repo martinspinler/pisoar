@@ -7,6 +7,12 @@
 
 class JaguarView : public QGraphicsView
 {
+    Q_OBJECT
+public:
+    enum Mode {MODE_HAND, MODE_RULER};
+
+private:
+    Mode m_mode;
     QPoint ptMouseDown;
     QGraphicsLineItem * m_scaleLineItem;
 
@@ -18,6 +24,11 @@ public:
     void mousePressEvent(QMouseEvent*event);
     void mouseReleaseEvent(QMouseEvent*event);
     void mouseMoveEvent(QMouseEvent*event);
+
+    void setMode(Mode mode);
+
+signals:
+    void rulerDone(float length);
 };
 
 #endif // JAGUARVIEW_H

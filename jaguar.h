@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QItemSelection>
 #include <QPushButton>
+#include <QToolBar>
 
 #include "layoutviewfactory.h"
 #include "layoutview.h"
@@ -31,6 +32,7 @@ class Jaguar : public QWidget, public EventListener<ObjectItemChange>
     JaguarView  *view;
     LayoutViewFactory viewFactory;
     QGraphicsScene*scene;
+    QToolBar    *image_toolbar;
 
     QListView   *db_list;
     QListView   *db_viewlist;
@@ -44,6 +46,7 @@ class Jaguar : public QWidget, public EventListener<ObjectItemChange>
     QPushButton *images_movedown;
     QPushButton *images_rotateleft;
     QPushButton *images_rotateright;
+    QPushButton *images_setScaleFrom;
 
     QHBoxLayout *box_main;
     QVBoxLayout *box_database;
@@ -71,8 +74,15 @@ private:
     void types_selectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void images_move_clicked();
     void images_rotate_clicked();
+    void images_setScaleFrom_clicked();
 
     void event(ObjectItemChange & event);
+
+    void onImageSetToolHand()  {view->setMode(JaguarView::MODE_HAND);}
+    void onImageSetToolRuler() {view->setMode(JaguarView::MODE_RULER);}
+
+private:
+    void onRulerDone(float scale);
 };
 
 #endif // JAGUAR_H

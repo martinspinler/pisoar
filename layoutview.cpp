@@ -154,7 +154,10 @@ void LayoutTopSideView::updateObject()
     float height[m_pixmaps];
 
     float space     = 10 * db->set.ppm * layoutItem->scale();
-    float scale  = db->set.ppm / (layoutItem->objectView()->item.images.first()->scale() / 10) * layoutItem->scale(); // pixels per mm
+    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+
+    float scale;
     float rotation;
 
     QRectF br;
@@ -162,6 +165,7 @@ void LayoutTopSideView::updateObject()
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
         switch(i) {
+        case 0: scale = mainScale; break;
         case 1: scale = height[0] / (std::fabs(cos(rotation*DEG))*pix[i].height() +
                                      std::fabs(sin(rotation*DEG))*pix[i].width()); break;
         }
@@ -202,8 +206,11 @@ void LayoutTopBottomView::updateObject()
     float width[m_pixmaps];
     float height[m_pixmaps];
 
+    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
     float space  = 10 * db->set.ppm * layoutItem->scale();
-    float scale  = db->set.ppm / (layoutItem->objectView()->item.images.first()->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+
+    float scale;
     float rotation;
 
     QRectF br;
@@ -211,6 +218,7 @@ void LayoutTopBottomView::updateObject()
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
         switch(i) {
+        case 0: scale = mainScale; break;
         case 1: scale = width[0] /  (std::fabs(cos(rotation*DEG))*pix[i].width() +
                                      std::fabs(sin(rotation*DEG))*pix[i].height()); break;
         }
@@ -254,15 +262,18 @@ void LayoutTopSideFrontView::updateObject()
     float width[m_pixmaps];
     float height[m_pixmaps];
 
+    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
     float space  = 10 * db->set.ppm * layoutItem->scale();
-    float scale  = db->set.ppm / (layoutItem->objectView()->item.images.first()->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
+    float scale;
     float rotation;
     QRectF br;
 
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
         switch(i) {
+        case 0: scale = mainScale; break;
         case 1: scale = height[0] / (std::fabs(cos(rotation*DEG))*pix[i].height() +
                                      std::fabs(sin(rotation*DEG))*pix[i].width()); break;
         case 2: scale = width[0] /  (std::fabs(cos(rotation*DEG))*pix[i].width() +
@@ -298,10 +309,12 @@ LayoutTopView::LayoutTopView(LayoutItem *i) : LayoutView(i, 1)
 void LayoutTopView::updateObject()
 {
     int i = 0;
-    float filescale = layoutItem->objectView()->item.images.first()->scale() / 10; // pixels per mm
-    float scale  = db->set.ppm / filescale * layoutItem->scale();
+    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
+    float scale;
     QRectF br;
+    scale = mainScale;
     br = doUniversalTransform(i, scale, layoutItem->objectView()->rotation(i));
 
     pixitem[0].moveBy(childPadding, childPadding);
