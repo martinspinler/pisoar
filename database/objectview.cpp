@@ -7,7 +7,6 @@ namespace DB
 
 ObjectView::ObjectView(const QJsonObject & obj, ObjectItem & item) : item(item)
 {
-    m_pagesCount = 0;
     QJsonArray mapping;
     QJsonArray rotation;
 
@@ -74,22 +73,8 @@ ObjectView::ObjectView(ObjectItem & item, QString name) : item(item)
         m_mapping.append(i);
         m_rotation.append(0);
     }
-    m_pagesCount = 0;
     m_scaleFrom = 0;
 
-    setIcon(f->icon_image);
-}
-void ObjectView::updateIcon()
-{
-    for(int i = 0; i < db->layout_model.rowCount(); i++) {
-        LayoutPage * layout = (LayoutPage*) db->layout_model.item(i);
-        for(int j = 0; j < layout->list_items.size(); j++) {
-            if(layout->list_items[j]->objectView() == this) {
-                setIcon(f->icon_done);
-                return;
-            }
-        }
-    }
     setIcon(f->icon_image);
 }
 void ObjectView::setMapping(int index, int moveto)
@@ -99,6 +84,24 @@ void ObjectView::setMapping(int index, int moveto)
 
     m_mapping[m_mapping.indexOf(moveto)] = m_mapping[index];
     m_mapping[index] = moveto;
+}
+void ObjectView::link(LayoutItem * view)
+{
+    m_layoutItems.append(view);
+    setIcon(f->icon_done);
+}
+void ObjectView::unlink(LayoutItem * view)
+{
+    m_layoutItems.removeAll(view);
+    if(m_layoutItems.isEmpty()) {
+        setIcon(f->icon_image);
+    }
+}
+void ObjectView::clean()
+{
+    foreach(LayoutItem* item, m_layoutItems) {
+        item->page()->removeItem(item);
+    }
 }
 
 }

@@ -74,7 +74,7 @@ public:
     const QDir & dirLayouts()    {return dir_layouts;}
 
     ObjectItem *createObject(QString name);
-    bool        removeObject(ObjectItem *item);
+    bool        removeObject(ObjectItem *item, bool force = false);
 
     ImageFile * imageFileByPath(QString path);
     const QList<ObjectImage*> objectImagesByFile(ImageFile* file);

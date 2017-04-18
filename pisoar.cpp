@@ -304,6 +304,21 @@ void Pisoar::db_remove_clicked()
 {
     ObjectItem * item = (ObjectItem*)db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
     m_image->updateObjects();
+    if(item->isUsed()) {
+        QMessageBox msgBox;
+        msgBox.setText("Objekt používán");
+        msgBox.setInformativeText("Opravdu chcete smazat objekt, který je již použitý na některé ploše?");
+        msgBox.setStandardButtons(QMessageBox::Yes| QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        int ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Yes:
+                break;
+            default:
+                return;
+        }
+    }
+    item->clean();
     db->removeObject(item);
 }
 void Pisoar::db_clean_clicked()

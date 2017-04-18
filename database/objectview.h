@@ -6,6 +6,8 @@
 
 namespace DB {
 
+class LayoutItem;
+
 class ObjectView : public QStandardItem {
     friend class ObjectItem;
 
@@ -13,8 +15,7 @@ class ObjectView : public QStandardItem {
     QList<int> m_mapping;
     QList<int> m_rotation;
     int m_scaleFrom;
-    int m_pagesCount;
-    //QList<LayoutPage*> m_layoutPages;
+    QList<LayoutItem*> m_layoutItems;
 
 public:
     ObjectItem & item;
@@ -23,7 +24,6 @@ public:
     ObjectView(const QJsonObject & obj, ObjectItem & item);
     QJsonObject toJsonObject();
 
-    void updateIcon();
     int  type()                                 {return m_type;}
     void setType(int type)                      {m_type = type;}
     void setMapping(int index, int moveto);
@@ -33,7 +33,12 @@ public:
     int rotation(int index)                     {return m_rotation[index];}
     int scaleFrom()                             {return m_scaleFrom;}
     QString name()                              {return item.text();}
-    int pagesCount()                            {return m_pagesCount;}
+    bool isUsed()                               {return !m_layoutItems.isEmpty();}
+    void clean();
+
+    void link(LayoutItem * view);
+    void unlink(LayoutItem * view);
+
 };
 
 }

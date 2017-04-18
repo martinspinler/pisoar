@@ -35,8 +35,8 @@ LayoutView::LayoutView(LayoutItem *li, int pixmaps) : layoutItem(li)
     childPadding = db->set.ppm * 5;
     m_pixmaps = pixmaps;
 
-    addToGroup((rruler      = new LayoutRuler()));
     addToGroup((rselect     = new QGraphicsRectItem()));
+    addToGroup((rruler      = new LayoutRuler()));
     addToGroup((rrect       = new QGraphicsRectItem()));
     addToGroup((rscale      = new QGraphicsTextItem()));
     addToGroup((rindex      = new QGraphicsTextItem()));
@@ -72,7 +72,7 @@ void LayoutView::updateObject()
     float rulerHeight  = layoutItem->ruler() ? rruler->sceneBoundingRect().height() + childPadding : 0;
     float rulerWidth   = db->set.ppm * 50 * layoutItem->scale();
 
-    rselect ->setRect(childPadding, childPadding, childWidth, childHeight);
+    rselect ->setRect(1, 1, childWidth + 2*childPadding-2, childHeight + 2*childPadding + rulerHeight-2);
     rrect   ->setRect(0, 0, childWidth + 2*childPadding, childHeight + 2*childPadding + rulerHeight);
     rruler  ->setPos(childPadding + childWidth/2 - rulerWidth/2, childPadding*1.5 + childHeight);
     rindex  ->setPos(0, childHeight);

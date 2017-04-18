@@ -24,7 +24,7 @@ public:
     QString imagePath(int index);
 
     bool rename(QString newName);
-    bool clean();
+    bool clean(bool force = false);
     bool isUsed();
 
     bool _canRename(QString newName);
@@ -33,7 +33,7 @@ public:
     QString _getNewFilename(QString newName);
 
     void update();
-    void    event(ObjectImageChange & event);
+    void event(ObjectImageChange & event);
 };
 
 }

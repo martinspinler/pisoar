@@ -209,11 +209,9 @@ LayoutPage* Database::createLayout(QString name)
     setModified();
     return layout;
 }
-bool Database::removeObject(ObjectItem* item)
+bool Database::removeObject(ObjectItem* item, bool force)
 {
-    if(!item->clean())
-        return false;
-
+    item->clean(force);
     object_model.removeRow(item->row());
     return true;
 }

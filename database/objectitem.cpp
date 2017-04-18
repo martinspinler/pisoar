@@ -87,16 +87,22 @@ ObjectItem::~ObjectItem()
 
 bool ObjectItem::isUsed() {
     foreach(ObjectView* view, views) {
-        if(view->pagesCount()) {
+        if(view->isUsed()) {
             return true;
         }
     }
     return false;
 }
-bool ObjectItem::clean()
+bool ObjectItem::clean(bool force)
 {
-    if(isUsed())    // TODO
+    if(!force && isUsed()) {
         return false;
+    }
+
+    foreach(ObjectView* view, views) {
+        view->clean();
+    }
+
     QDir dirItems = db->dirItems();
 
     for(int i = 0; i < images.size(); i++) {

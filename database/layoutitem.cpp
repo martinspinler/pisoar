@@ -5,13 +5,13 @@ namespace DB {
 
 LayoutItem::LayoutItem(ObjectView* view) : m_objectView(view), m_ruler(false), m_border(false)
 {
-    m_pagesCount = 0;
+    m_page = NULL;
     m_scale = db->set.dpi / 2.54;
     m_pos = QPointF(0, 0);
 }
 LayoutItem::LayoutItem(QJsonObject &obj)
 {
-    m_pagesCount = 0;
+    m_page = NULL;
     m_objectView = (ObjectView*) db->view_model.findItems(obj["name"].toString()).first();
     m_scale = obj["scale"].toDouble();
     m_ruler = obj["ruler"].toBool();
@@ -41,6 +41,18 @@ QJsonObject LayoutItem::toJsonObject()
     obj["pointx"] = (int) m_pos.x();
     obj["pointy"] = (int) m_pos.y();
     return obj;
+}
+void LayoutItem::link(LayoutPage * page)
+{
+    Q_ASSERT(m_page == NULL);
+    m_page = page;
+    m_objectView->link(this);
+}
+void LayoutItem::unlink(LayoutPage * page)
+{
+    Q_ASSERT(m_page != NULL);
+    m_page = NULL;
+    m_objectView->unlink(this);
 }
 
 }
