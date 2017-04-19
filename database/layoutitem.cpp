@@ -42,6 +42,12 @@ QJsonObject LayoutItem::toJsonObject()
     obj["pointy"] = (int) m_pos.y();
     return obj;
 }
+LayoutItem::~LayoutItem()
+{
+    if(m_page)
+        unlink(m_page);
+}
+
 void LayoutItem::link(LayoutPage * page)
 {
     Q_ASSERT(m_page == NULL);
@@ -50,9 +56,12 @@ void LayoutItem::link(LayoutPage * page)
 }
 void LayoutItem::unlink(LayoutPage * page)
 {
-    Q_ASSERT(m_page != NULL);
-    m_page = NULL;
-    m_objectView->unlink(this);
+    Q_ASSERT(m_page != NULL && m_page == page);
+
+    if(m_page) {
+        m_page = NULL;
+        m_objectView->unlink(this);
+    }
 }
 
 }

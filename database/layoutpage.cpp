@@ -9,9 +9,9 @@ LayoutPage::LayoutPage(QJsonObject & obj)
     QJsonArray items = obj["items"].toArray();
     for(QJsonArray::const_iterator it = items.constBegin(); it != items.constEnd(); it++) {
         QJsonObject o = (*it).toObject();
-        LayoutItem *li = new LayoutItem(o);
-        list_items.append(li);
-        li->link(this);
+        LayoutItem *item = new LayoutItem(o);
+        item->link(this);
+        list_items.append(item);
     }
 }
 QJsonObject LayoutPage::toJsonObject()
@@ -29,9 +29,7 @@ QJsonObject LayoutPage::toJsonObject()
 
 LayoutPage::~LayoutPage()
 {
-    while(!list_items.isEmpty()) {
-        LayoutItem * item = list_items.takeFirst();
-        item->unlink(this);
+    foreach(LayoutItem * item, list_items) {
         delete item;
     }
 }
@@ -39,8 +37,8 @@ LayoutPage::~LayoutPage()
 LayoutItem* LayoutPage::createItem(ObjectView* objectView)
 {
     LayoutItem* item = new LayoutItem(objectView);
-    list_items.append(item);
     item->link(this);
+    list_items.append(item);
     db->setModified();
     return item;
 }

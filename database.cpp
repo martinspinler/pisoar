@@ -40,12 +40,13 @@ Database::Database()
 }
 void Database::clear()
 {
+    layout_model.clear();
+    view_model.clear();
+    object_model.clear();
+
     while(!list_files.isEmpty())
         delete list_files.takeFirst();
 
-    object_model.clear();
-    view_model.clear();
-    layout_model.clear();
     m_bModified = false;
 }
 bool Database::create(QDir dir)

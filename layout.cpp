@@ -78,7 +78,6 @@ void Layout::exportToImage(QString filename)
 }
 void Layout::loadPage(LayoutPage *page)
 {
-    LayoutView * view;
     clearLayout();
 
     currentLayout = page;
@@ -86,8 +85,7 @@ void Layout::loadPage(LayoutPage *page)
         return;
 
     for(int i = 0; i < currentLayout->list_items.size(); i++) {
-        view = createObject(currentLayout->list_items[i]);
-        view->link(page);
+        createObject(currentLayout->list_items[i]);
     }
 }
 

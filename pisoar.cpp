@@ -142,6 +142,11 @@ Pisoar::~Pisoar()
 {
     if(m_selectedImage && m_selectedImage->objectItem() == NULL)
         delete m_selectedImage;
+
+    QGraphicsScene * prev;
+    prev =  db_preview->scene();
+    db_preview->setScene(0);
+    delete prev;
 }
 void Pisoar::setCurrentDir(QDir dir)
 {

@@ -111,6 +111,8 @@ Jaguar::Jaguar(QWidget *parent) : QWidget(parent)
 Jaguar::~Jaguar()
 {
     clear();
+    view->setScene(0);
+    delete scene;
 }
 
 void Jaguar::clear()

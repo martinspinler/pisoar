@@ -22,6 +22,8 @@ public:
     LayoutItem(QJsonObject & obj);
     QJsonObject toJsonObject();
 
+    virtual ~LayoutItem();
+
     QString name()              {return m_objectView->name();}
     bool border()               {return m_border;}
     bool ruler()                {return m_ruler;}

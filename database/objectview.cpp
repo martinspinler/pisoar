@@ -87,6 +87,7 @@ void ObjectView::setMapping(int index, int moveto)
 }
 void ObjectView::link(LayoutItem * view)
 {
+    Q_ASSERT(!m_layoutItems.contains(view));
     m_layoutItems.append(view);
     setIcon(f->icon_done);
 }
