@@ -155,21 +155,9 @@ void Pisoar::setCurrentDir(QDir dir)
 }
 void Pisoar::batchScale()
 {
-    ObjectItem* item;
-
     doBatchScale = !doBatchScale;
-
-    if(doBatchScale) do {
-        db_list->setCurrentIndex(db_filter_model->index(db_list->currentIndex().row() + 1, 0));
-        item = (ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
-        if(item && item->images.size() > 0 && item->images.first()->scale() < 1) {
-            db_info_linkActivated(item->images[0]->path());
-            return;
-        }
-    }
-    while (item != NULL);
-
-    doBatchScale = false;
+    if(doBatchScale)
+        scaleBatchNext();
 }
 
 void Pisoar::fl_list_activated(const QModelIndex &index)
@@ -377,24 +365,28 @@ void Pisoar::onObjectSelected(ObjectImage * image)
 }
 void Pisoar::onCalibrateDone(QVariant scale)
 {
-    QModelIndex index;
-    ObjectItem * item;
-
     if(fl_file)
         fl_file->setScale(scale.toFloat() / db->set.calibLength);
     fl_info_update();
     db_info_update();
 
+    if(doBatchScale)
+        scaleBatchNext();
+}
+void Pisoar::scaleBatchNext()
+{
+    ObjectItem * item;
+    QModelIndex index;
     index = db_list->currentIndex();
-    if(doBatchScale && index.isValid()) {
+    if(index.isValid()) {
         do {
-            index = db_list->model()->index(index.row() + 1, 0);
             item = (ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(index));
             if(item && item->images.size() > 0 && item->images.first()->scale() < 1) {
                 db_list->setCurrentIndex(index);
                 db_info_linkActivated(item->images[0]->path());
                 break;
             }
+            index = db_list->model()->index(index.row() + 1, 0);
         }
         while (item != NULL);
     }

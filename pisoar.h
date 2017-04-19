@@ -84,6 +84,7 @@ public:
 
     void setCurrentDir(QDir dir);
     void batchScale();
+    void scaleBatchNext();
 
 private:
     void fl_list_selectionChanged(const QItemSelection &selection);
