@@ -55,6 +55,14 @@ ObjectItem::ObjectItem(const QJsonObject &obj)
             db->view_model.appendRow(view);
         }
     }
+
+    QIcon icon = f->icon_image;
+    switch(images.size()) {
+        case 0: icon = f->icon_0; break;
+        case 1: icon = f->icon_1; break;
+        case 2: icon = f->icon_2; break;
+    }
+    setIcon(icon);
 }
 QJsonObject ObjectItem::toJsonObject()
 {

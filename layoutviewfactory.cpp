@@ -16,6 +16,7 @@ QStringList LayoutViewFactory::getAllViews()
     list.append("Top-Side");
     list.append("Top-Bottom");
     list.append("Top-Side-Front");
+    list.append("RightTop-Side-Front");
     return list;
 }
 
@@ -26,6 +27,7 @@ QList<bool> LayoutViewFactory::getViewsAvailability(ObjectItem * item)
     list.append(item->images.size() >= 1);
     list.append(item->images.size() >= 2);
     list.append(item->images.size() >= 2);
+    list.append(item->images.size() >= 3);
     list.append(item->images.size() >= 3);
     return list;
 }
@@ -50,6 +52,7 @@ LayoutView * LayoutViewFactory::newLayoutView(LayoutItem * item)
         case 2: view = new LayoutTopSideView(item); break;
         case 3: view = new LayoutTopBottomView(item); break;
         case 4: view = new LayoutTopSideFrontView(item); break;
+        case 5: view = new LayoutRTopSideFrontView(item); break;
     }
     return view;
 }

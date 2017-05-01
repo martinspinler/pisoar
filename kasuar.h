@@ -57,6 +57,7 @@ public:
 
     void onLayoutRect();
     void onLayoutRuler();
+    void onSceneSelectionChanged();
 };
 
 #endif // KASUAR_H

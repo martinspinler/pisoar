@@ -296,7 +296,6 @@ void Pisoar::db_assign_clicked()
 void Pisoar::db_remove_clicked()
 {
     ObjectItem * item = (ObjectItem*)db->object_model.itemFromIndex(db_filter_model->mapToSource(db_list->currentIndex()));
-    m_image->updateObjects();
     if(item->isUsed()) {
         QMessageBox msgBox;
         msgBox.setText("Objekt používán");
@@ -311,7 +310,9 @@ void Pisoar::db_remove_clicked()
                 return;
         }
     }
-    item->clean();
+
+    item->clean(true);
+    //m_image->updateObjects();
     db->removeObject(item);
 }
 void Pisoar::db_clean_clicked()
@@ -325,7 +326,8 @@ void Pisoar::db_clean_clicked()
         msgBox.exec();
     } else {
         item->clean();
-        m_image->updateObjects();
+       /* if(m_image)
+            m_image->updateObjects();*/
     }
 }
 void Pisoar::db_generate_clicked()
@@ -375,16 +377,26 @@ void Pisoar::onCalibrateDone(QVariant scale)
 }
 void Pisoar::scaleBatchNext()
 {
+    bool checkFirstOnly = true;
+
     ObjectItem * item;
     QModelIndex index;
     index = db_list->currentIndex();
     if(index.isValid()) {
         do {
             item = (ObjectItem*) db->object_model.itemFromIndex(db_filter_model->mapToSource(index));
-            if(item && item->images.size() > 0 && item->images.first()->scale() < 1) {
-                db_list->setCurrentIndex(index);
-                db_info_linkActivated(item->images[0]->path());
+            if(!item)
                 break;
+
+            foreach(ObjectImage*image, item->images) {
+                if(image->scale() < 1) {
+                    db_list->setCurrentIndex(index);
+                    db_info_linkActivated(image->path());
+                    item = NULL;
+                    break;
+                }
+                if(checkFirstOnly)
+                    break;
             }
             index = db_list->model()->index(index.row() + 1, 0);
         }

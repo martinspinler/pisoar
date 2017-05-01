@@ -30,6 +30,7 @@ public:
     void setRotation(int index, int angle)      {m_rotation[index] = angle;}
     void setScaleFrom(int index)                {m_scaleFrom = index;}
     int mapping(int index)                      {return m_mapping[index];}
+    int revMapping(int revIndex);
     int rotation(int index)                     {return m_rotation[index];}
     int scaleFrom()                             {return m_scaleFrom;}
     QString name()                              {return item.text();}

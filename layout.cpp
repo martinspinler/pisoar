@@ -21,10 +21,12 @@ Layout::Layout()
 
     db->set.ppm         = logicalDpiX() / 25.4;
     db->set.dpi         = 300.0f / logicalDpiX();
-    edgew               = 10    * db->set.ppm;
-    edgeh               = 10    * db->set.ppm;
-    paperw              = 210   * db->set.ppm - edgew*2;
-    paperh              = 297   * db->set.ppm - edgeh*2;
+    edgel               = 25    * db->set.ppm;
+    edger               = 15    * db->set.ppm;
+    edget               = 15    * db->set.ppm;
+    edgeb               = 15    * db->set.ppm;
+    paperw              = 210   * db->set.ppm - edgel - edger;
+    paperh              = 297   * db->set.ppm - edget - edgeb;
     alignment           = 5     * db->set.ppm;
 
     setDragMode(QGraphicsView::RubberBandDrag);
@@ -33,7 +35,7 @@ Layout::Layout()
     setResizeAnchor(QGraphicsView::AnchorViewCenter);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
-    scene->addItem((edgeRect = new QGraphicsRectItem(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2)));
+    scene->addItem((edgeRect = new QGraphicsRectItem(-edgel, -edget, paperw+edgel+edger, paperh+edget+edgeb)));
     scene->addItem((mainRect = new QGraphicsRectItem(0, 0, paperw, paperh)));
     edgeRect->setBrush(f->selectbrush);
     mainRect->setBrush(f->whitebrush);
@@ -44,6 +46,10 @@ Layout::Layout()
     //text_objectList->setFont(font);
     text_objectList->setTextWidth(paperw);
     text_objectList->setPos(0, paperh-12);
+
+    m_ruler = new LayoutRuler();
+    scene->addItem(m_ruler);
+    m_ruler->hide();
 }
 
 void Layout::clearLayout()
@@ -61,10 +67,26 @@ void Layout::clearLayout()
 
 void Layout::exportToImage(QString filename)
 {
+    const bool edgeTransparent = true;
+    const bool edgeHidden = true;
+    const bool edgePresent = true;
+    const bool mainRectPresent = true;
+
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
     scene->clearSelection();
-    edgeRect->hide();
-    scene->setSceneRect(-edgew, -edgeh, paperw+edgew*2, paperh+edgeh*2);
+    if(!edgeTransparent)
+        edgeRect->setBrush(f->whitebrush);
+    if(edgeHidden)
+        edgeRect->hide();
+
+    QPen oldPen = mainRect->pen();
+    if(!mainRectPresent)
+        mainRect->setPen(QPen(Qt::NoPen));
+
+    if(edgePresent)
+        scene->setSceneRect(-edgel, -edget, paperw+edgel+edger, paperh+edget+edgeb);
+    else
+        scene->setSceneRect(0, 0, paperw, paperh);
 
     QSizeF size = scene->sceneRect().size();
     QImage image(size.width()*db->set.dpi, size.height()*db->set.dpi, QImage::Format_ARGB32);
@@ -73,19 +95,43 @@ void Layout::exportToImage(QString filename)
     QPainter painter(&image);
     scene->render(&painter);
     image.save(filename);
-    edgeRect->show();
+
+    if(edgeHidden)
+        edgeRect->show();
+    if(edgeTransparent)
+        edgeRect->setBrush(f->selectbrush);
+    if(!mainRectPresent)
+        mainRect->setPen(oldPen);
+
     QApplication::restoreOverrideCursor();
 }
 void Layout::loadPage(LayoutPage *page)
 {
+    float scale = 0;
+    bool sameScale = true;
     clearLayout();
 
     currentLayout = page;
     if(!currentLayout)
         return;
 
-    for(int i = 0; i < currentLayout->list_items.size(); i++) {
-        createObject(currentLayout->list_items[i]);
+    foreach(LayoutItem * item, currentLayout->list_items) {
+        createObject(item);
+
+        if(scale == 0)
+            scale = item->scale();
+        else if(scale != item->scale())
+            sameScale = false;
+    }
+
+    if(scale != 0 && sameScale && db->set.showScaleOnLayoutPages) {
+        QRectF r;
+        m_ruler->show();
+        m_ruler->updateObject(scale);
+        r = m_ruler->childrenBoundingRect();
+        m_ruler->setPos(paperw/2 /*- r.width()/2 * scale*/, paperh - r.height() - text_objectList->boundingRect().height());
+    } else {
+        m_ruler->hide();
     }
 }
 
@@ -99,7 +145,17 @@ LayoutView* Layout::createObject(LayoutItem *item)
     view->setFlag(LayoutView::ItemSendsScenePositionChanges);
 
     scene->addItem(view);
+
+    int index = 0;
+    foreach(LayoutView * object, objects) {
+        if(object->pos().y() > view->pos().y())
+            break;
+        index++;
+    }
+
     objects.append(view);
+    //objects.insert(index, view);
+
     updateText();
     return view;
 }
@@ -110,13 +166,16 @@ void Layout::updateText()
         text_objectList->setPlainText("");
         return;
     }
-    QString text = db->set.layoutText.arg(currentLayout->text()) + "\n";
+
     int index = 1;
-    for(QList<LayoutView*>::const_iterator i = objects.constBegin(); i != objects.constEnd(); i++, index++) {
-        (*i)->rindex->setPlainText(QString::number(index));
-        text += QString(index == 1 ? "" : ", ") + QString::number(index) + " - " + (*i)->layoutItem->name();
+    QString text = db->set.layoutText.arg(currentLayout->text());
+    foreach(LayoutView* object, objects) {
+        object->rindex->setPlainText(QString::number(index));
+        text += QString(index == 1 ? ": <b>" : ", <b>") + QString::number(index) + "</b> - " + object->layoutItem->name();
+        index++;
     }
     text_objectList->setPlainText(text);
+    text_objectList->setHtml(text);
     text_objectList->setPos(0, paperh - text_objectList->boundingRect().height());
 }
 

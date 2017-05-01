@@ -11,8 +11,12 @@ LayoutItem::LayoutItem(ObjectView* view) : m_objectView(view), m_ruler(false), m
 }
 LayoutItem::LayoutItem(QJsonObject &obj)
 {
+    QString name = obj["name"].toString();
+    QList<QStandardItem*> list = db->view_model.findItems(name);
+    Q_ASSERT(!list.empty());
+
     m_page = NULL;
-    m_objectView = (ObjectView*) db->view_model.findItems(obj["name"].toString()).first();
+    m_objectView = (ObjectView*) list.first();
     m_scale = obj["scale"].toDouble();
     m_ruler = obj["ruler"].toBool();
     m_border= obj["border"].toBool();

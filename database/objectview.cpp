@@ -85,6 +85,14 @@ void ObjectView::setMapping(int index, int moveto)
     m_mapping[m_mapping.indexOf(moveto)] = m_mapping[index];
     m_mapping[index] = moveto;
 }
+int ObjectView::revMapping(int revIndex)
+{
+    for(int i = 0; i < item.images.size(); i++) {
+        if(m_mapping[i] == revIndex)
+            return i;
+    }
+    return -1;
+}
 void ObjectView::link(LayoutItem * view)
 {
     Q_ASSERT(!m_layoutItems.contains(view));
@@ -103,6 +111,7 @@ void ObjectView::clean()
     foreach(LayoutItem* item, m_layoutItems) {
         item->page()->removeItem(item);
     }
+    setIcon(f->icon_image);
 }
 
 }

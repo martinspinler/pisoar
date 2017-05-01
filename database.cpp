@@ -95,14 +95,6 @@ bool Database::open(QDir dir)
     for(QJsonArray::const_iterator i = objs.constBegin(); i != objs.constEnd(); i++ ) {
         QJsonObject obj = (*i).toObject();
         ObjectItem * objectItem = new ObjectItem(obj);
-
-        QIcon icon = f->icon_image;
-        switch(objectItem->images.size()) {
-            case 0: icon = f->icon_0; break;
-            case 1: icon = f->icon_1; break;
-            case 2: icon = f->icon_2; break;
-        }
-        objectItem->setIcon(icon);
         object_model.appendRow(objectItem);
     }
 

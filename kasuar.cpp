@@ -2,7 +2,6 @@
 #include <QListView>
 #include <QProgressDialog>
 
-
 #include "kasuar.h"
 #include "factory.h"
 
@@ -61,6 +60,7 @@ Kasuar::Kasuar(QWidget *parent)
     connect(layout_add,     &QPushButton::clicked,  this, &Kasuar::layout_add_clicked);
     connect(layout_list->selectionModel(),  &QItemSelectionModel::selectionChanged, this, &Kasuar::layout_itemSelectionChanged);
 
+    connect(layout->getScene(), &QGraphicsScene::selectionChanged, this, &Kasuar::onSceneSelectionChanged);
     setLayout(box_main);
 
     currentLayout = NULL;
@@ -80,7 +80,7 @@ void Kasuar::db_add_clicked()
 }
 void Kasuar::db_save_clicked()
 {    
-    layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + QString(".png")));
+    layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + db->set.imageTypeLayout));
 }
 void Kasuar::bakeLayouts()
 {
@@ -88,10 +88,11 @@ void Kasuar::bakeLayouts()
     progress.setWindowModality(Qt::WindowModal);
     progress.show();
     progress.update();
+
     for(int i = 0; i < db->layout_model.rowCount(); i++) {
         progress.setValue(i);
         layout_list->setCurrentIndex(db->layout_model.index(i, 0));
-        layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + QString(".png")));
+        layout->exportToImage(db->dirLayouts().filePath(currentLayout->text() + db->set.imageTypeLayout));
 
         if (progress.wasCanceled())
             break;
@@ -127,4 +128,15 @@ void Kasuar::onLayoutRuler()
 void Kasuar::db_sort_toggled(bool checked)
 {
     db->view_model.sort(checked ? 0 : 1);
+}
+
+void Kasuar::onSceneSelectionChanged()
+{
+    db_list->selectionModel()->clearSelection();
+
+    foreach (QGraphicsItem *item, layout->getScene()->selectedItems()) {
+        LayoutView * layoutView = (LayoutView*) item;
+        ObjectView *view = (ObjectView *)db->view_model.findItems(layoutView->layoutItem->name()).first();
+        db_list->selectionModel()->select(/*filter->mapFromSource(*/view->index()/*)*/, QItemSelectionModel::Select);
+    }
 }

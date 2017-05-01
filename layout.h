@@ -25,14 +25,14 @@ class Layout : public QGraphicsView
     Q_OBJECT
 
 private:
+    LayoutPage * currentLayout;
+    LayoutRuler * m_ruler;
     QList<LayoutView*> objects;
 
     QGraphicsScene *scene;
     QGraphicsTextItem *text_objectList;
     QGraphicsRectItem * edgeRect;
     QGraphicsRectItem * mainRect;
-
-    LayoutPage * currentLayout;
 
 public:
     Layout();
@@ -50,12 +50,14 @@ public:
     void toggleRuler();
 
     void keyPressEvent(QKeyEvent * event);
-    void bakeLayout(LayoutPage* page);
-
     const QList<LayoutItem*> getSelection();
 
-    int edgew;
-    int edgeh;
+    QGraphicsScene*getScene() {return scene;}
+
+    int edgel;
+    int edger;
+    int edget;
+    int edgeb;
     int paperw;
     int paperh;
 

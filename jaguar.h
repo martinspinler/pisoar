@@ -81,6 +81,8 @@ private:
     void onImageSetToolHand()  {view->setMode(JaguarView::MODE_HAND);}
     void onImageSetToolRuler() {view->setMode(JaguarView::MODE_RULER);}
 
+    void onSceneSelectionChanged();
+
 private:
     void onRulerDone(float scale);
 };

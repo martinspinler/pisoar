@@ -140,8 +140,6 @@ void Jaguar::setView(ObjectView * objectView)
         return;
     }
 
-    list_types->selectionModel()->select(model_types->index(m_objectView->type(), 0), QItemSelectionModel::ClearAndSelect);
-
     scene->addItem(m_layoutView);
     updateView();
 }
@@ -210,11 +208,14 @@ void Jaguar::view_selectionChanged(const QItemSelection &selected, const QItemSe
         QString path = m_objectView->item.imagePath(itemIndex);
         QStandardItem * image_item = new QStandardItem(QString::number(itemIndex) + QString((m_objectView->scaleFrom() == i) ? "M" : ""));
         QPixmap pic = QPixmap(path).scaledToWidth(list_images->width() - 50);
+
         image_item->setData(pic, Qt::DecorationRole);
         list.append(image_item);
         model_images->appendRow(list);
         i++;
     }
+
+    list_types->selectionModel()->select(model_types->index(m_objectView->type(), 0), QItemSelectionModel::ClearAndSelect);
 
     setView(m_objectView);
 }

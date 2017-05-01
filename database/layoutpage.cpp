@@ -37,6 +37,7 @@ LayoutPage::~LayoutPage()
 LayoutItem* LayoutPage::createItem(ObjectView* objectView)
 {
     LayoutItem* item = new LayoutItem(objectView);
+    item->setScale(db->set.layoutItemDefaultScale);
     item->link(this);
     list_items.append(item);
     db->setModified();

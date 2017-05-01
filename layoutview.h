@@ -30,12 +30,16 @@ protected:
     QPixmap             *pix;
     QGraphicsPixmapItem *pixitem;
 
+    int m_mainScaleIndex;
     int m_pixmaps;
     float childWidth;
     float childHeight;
     float childPadding;
 
     QRectF doUniversalTransform(int i, float scale, int rotation);
+    QRectF doRotationTransform(int i, int rotation);
+    QRectF doScaleTransform(int i, float scale);
+    QRectF doClearTransform(int i);
 
 public:
     QGraphicsTextItem * rindex;
@@ -87,6 +91,16 @@ class LayoutTopSideFrontView: public LayoutView {
     QGraphicsLineItem * rlinebot;
 public:
     LayoutTopSideFrontView(LayoutItem*item);
+    void updateObject();
+};
+
+class LayoutRTopSideFrontView: public LayoutView {
+    QGraphicsLineItem * rlineleft;
+    QGraphicsLineItem * rlineright;
+    QGraphicsLineItem * rlinetop;
+    QGraphicsLineItem * rlinebot;
+public:
+    LayoutRTopSideFrontView(LayoutItem*item);
     void updateObject();
 };
 

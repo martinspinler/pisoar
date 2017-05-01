@@ -26,8 +26,15 @@ void LayoutRuler::updateObject(float scale)
     ((QGraphicsRectItem *)childItems()[1])->setRect(mmscale*00, 0, mmscale*10, mmscale*2*db->set.ppm);
     ((QGraphicsRectItem *)childItems()[2])->setRect(mmscale*20, 0, mmscale*10, mmscale*2*db->set.ppm);
     ((QGraphicsRectItem *)childItems()[3])->setRect(mmscale*40, 0, mmscale*10, mmscale*2*db->set.ppm);
-    ((QGraphicsTextItem *)childItems()[4])->setPos(mmscale*-5, 0*mmscale*3*db->set.ppm);
+    ((QGraphicsTextItem *)childItems()[4])->setPos(mmscale*-5-((QGraphicsTextItem *)childItems()[4])->boundingRect().width(), 0*mmscale*3*db->set.ppm);
     ((QGraphicsTextItem *)childItems()[5])->setPos(mmscale*55, 0*mmscale*3*db->set.ppm);
+
+    for(int i = 0; i < 4; i++) {
+        childItems()[i]->setPos(-25*mmscale, 0);
+    }
+    for(int i = 4; i < 6; i++) {
+        childItems()[i]->moveBy(-25*mmscale, 0);
+    }
 }
 
 LayoutView::LayoutView(LayoutItem *li, int pixmaps) : layoutItem(li)
@@ -54,6 +61,7 @@ LayoutView::LayoutView(LayoutItem *li, int pixmaps) : layoutItem(li)
             pixitem[i].setZValue(1);
             addToGroup(&pixitem[i]);
         }
+        m_mainScaleIndex = layoutItem->objectView()->revMapping(layoutItem->objectView()->scaleFrom());
     }
 }
 LayoutView::~LayoutView()
@@ -70,11 +78,10 @@ LayoutView::~LayoutView()
 void LayoutView::updateObject()
 {
     float rulerHeight  = layoutItem->ruler() ? rruler->sceneBoundingRect().height() + childPadding : 0;
-    float rulerWidth   = db->set.ppm * 50 * layoutItem->scale();
 
     rselect ->setRect(1, 1, childWidth + 2*childPadding-2, childHeight + 2*childPadding + rulerHeight-2);
     rrect   ->setRect(0, 0, childWidth + 2*childPadding, childHeight + 2*childPadding + rulerHeight);
-    rruler  ->setPos(childPadding + childWidth/2 - rulerWidth/2, childPadding*1.5 + childHeight);
+    rruler  ->setPos(childPadding + childWidth/2, childPadding*1.5 + childHeight);
     rindex  ->setPos(0, childHeight);
     rscale  ->setPlainText("Scale: 1x");
     rrect   ->setVisible(layoutItem->border());
@@ -92,6 +99,48 @@ QRectF LayoutView::doUniversalTransform(int i, float scale, int rotation)
     QTransform tr;
     tr.reset();
     tr.rotate(rotation);
+    tr.scale(scale, scale);
+    br = tr.mapRect(pixitem[i].boundingRect());
+
+    pixitem[i].setTransform(tr);
+    pixitem[i].setPos(-br.left(), -br.top());
+    return br;
+}
+
+QRectF LayoutView::doClearTransform(int i)
+{
+    QRectF br;
+    QTransform tr;
+    tr.reset();
+    br = tr.mapRect(pixitem[i].boundingRect());
+
+    pixitem[i].setTransform(tr);
+    pixitem[i].setPos(-br.left(), -br.top());
+    return br;
+}
+
+QRectF LayoutView::doRotationTransform(int i, int rotation)
+{
+    QRectF br;
+    QTransform tr;
+    tr.reset();
+    tr = pixitem[i].transform();
+    tr.rotate(rotation);
+    br = tr.mapRect(pixitem[i].boundingRect());
+
+    pixitem[i].setTransform(tr);
+    pixitem[i].setPos(-br.left(), -br.top());
+    return br;
+}
+
+QRectF LayoutView::doScaleTransform(int i, float scale)
+{
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+
+    QRectF br;
+    QTransform tr;
+    tr.reset();
+    tr = pixitem[i].transform();
     tr.scale(scale, scale);
     br = tr.mapRect(pixitem[i].boundingRect());
 
@@ -152,25 +201,33 @@ void LayoutTopSideView::updateObject()
 
     float width[m_pixmaps];
     float height[m_pixmaps];
+    float scale[m_pixmaps];
 
     float space     = 10 * db->set.ppm * layoutItem->scale();
-    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
-    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
-    float scale;
     float rotation;
 
     QRectF br;
 
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
-        switch(i) {
-        case 0: scale = mainScale; break;
-        case 1: scale = height[0] / (std::fabs(cos(rotation*DEG))*pix[i].height() +
-                                     std::fabs(sin(rotation*DEG))*pix[i].width()); break;
-        }
+        doClearTransform(i);
+        br = doRotationTransform(i, rotation);
 
-        br = doUniversalTransform(i, scale, rotation);
+        width[i]    = br.width();
+        height[i]   = br.height();
+    }
+    for (int i = 0; i < m_pixmaps; i++) {
+        switch(i) {
+        case 0: scale[i] = 1; break;
+        case 1: scale[i] = height[0]  / height[i]; break;
+        }
+    }
+    mainScale = mainScale / scale[m_mainScaleIndex];
+    for (int i = 0; i < m_pixmaps; i++) {
+        br = doScaleTransform(i, scale[i] * mainScale);
+
         width[i]    = br.width();
         height[i]   = br.height();
     }
@@ -205,25 +262,32 @@ void LayoutTopBottomView::updateObject()
 
     float width[m_pixmaps];
     float height[m_pixmaps];
+    float scale[m_pixmaps];
 
-    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
     float space  = 10 * db->set.ppm * layoutItem->scale();
-    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
-    float scale;
     float rotation;
 
     QRectF br;
-
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
-        switch(i) {
-        case 0: scale = mainScale; break;
-        case 1: scale = width[0] /  (std::fabs(cos(rotation*DEG))*pix[i].width() +
-                                     std::fabs(sin(rotation*DEG))*pix[i].height()); break;
-        }
+        doClearTransform(i);
+        br = doRotationTransform(i, rotation);
 
-        br = doUniversalTransform(i, scale, layoutItem->objectView()->rotation(i));
+        width[i]    = br.width();
+        height[i]   = br.height();
+    }
+    for (int i = 0; i < m_pixmaps; i++) {
+        switch(i) {
+        case 0: scale[i] = 1; break;
+        case 1: scale[i] = width[0]  / width[i]; break;
+        }
+    }
+    mainScale = mainScale / scale[m_mainScaleIndex];
+    for (int i = 0; i < m_pixmaps; i++) {
+        br = doScaleTransform(i, scale[i] * mainScale);
+
         width[i]    = br.width();
         height[i]   = br.height();
     }
@@ -262,26 +326,99 @@ void LayoutTopSideFrontView::updateObject()
     float width[m_pixmaps];
     float height[m_pixmaps];
 
-    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
     float space  = 10 * db->set.ppm * layoutItem->scale();
-    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
-    float scale;
+    float scale[m_pixmaps];
     float rotation;
     QRectF br;
 
     for (int i = 0; i < m_pixmaps; i++) {
         rotation = layoutItem->objectView()->rotation(i);
+        doClearTransform(i);
+        br = doRotationTransform(i, rotation);
+
+        width[i]    = br.width();
+        height[i]   = br.height();
+    }
+    for (int i = 0; i < m_pixmaps; i++) {
         switch(i) {
-        case 0: scale = mainScale; break;
-        case 1: scale = height[0] / (std::fabs(cos(rotation*DEG))*pix[i].height() +
-                                     std::fabs(sin(rotation*DEG))*pix[i].width()); break;
-        case 2: scale = width[0] /  (std::fabs(cos(rotation*DEG))*pix[i].width() +
-                                     std::fabs(sin(rotation*DEG))*pix[i].height()); break;
-
+        case 0: scale[i] = 1; break;
+        case 1: scale[i] = height[0] / height[i]; break;
+        case 2: scale[i] = width[0]  / width[i]; break;
         }
+    }
+    mainScale = mainScale / scale[m_mainScaleIndex];
+    for (int i = 0; i < m_pixmaps; i++) {
+        br = doScaleTransform(i, scale[i] * mainScale);
 
-        br = doUniversalTransform(i, scale, layoutItem->objectView()->rotation(i));
+        width[i]    = br.width();
+        height[i]   = br.height();
+    }
+    pixitem[0].moveBy(childPadding + (!swapside ? width[LEFT] + space : 0), childPadding + height[2] + space);
+    pixitem[1].moveBy(childPadding + ( swapside ? width[LEFT] + space : 0), childPadding + height[2] + space);
+    pixitem[2].moveBy(childPadding + (!swapside ? width[LEFT] + space : 0), childPadding);
+
+    childWidth  = width[0]  + space + width[1];
+    childHeight = height[2] + space + height[1];
+
+    rlinetop  ->setLine(childPadding + width[LEFT] + 5, childPadding + height[2] + space,               childPadding + width[LEFT] + space - 5, childPadding + height[2] + space            );
+    rlinebot  ->setLine(childPadding + width[LEFT] + 5, childPadding + height[2] + space + height[0],   childPadding + width[LEFT] + space - 5, childPadding + height[2] + space + height[0]);
+    rlineleft ->setLine(childPadding + (!swapside ? width[LEFT] + space : 0                          ), childPadding + height[2] + 5, childPadding + (!swapside ? width[LEFT] + space : 0),                           childPadding + height[2] + space - 5);
+    rlineright->setLine(childPadding + ( swapside ? width[LEFT]         : width[0] + space + width[1]), childPadding + height[2] + 5, childPadding + ( swapside ? width[LEFT]         : width[0] + space + width[1]), childPadding + height[2] + space - 5);
+
+    LayoutView::updateObject();
+}
+
+LayoutRTopSideFrontView::LayoutRTopSideFrontView(LayoutItem *i) : LayoutView(i, 3)
+{
+    addToGroup((rlineleft   = new QGraphicsLineItem()));
+    addToGroup((rlineright  = new QGraphicsLineItem()));
+    addToGroup((rlinetop    = new QGraphicsLineItem()));
+    addToGroup((rlinebot    = new QGraphicsLineItem()));
+
+    rlineleft->setZValue(1);
+    rlineright->setZValue(1);
+    rlinetop->setZValue(1);
+    rlinebot->setZValue(1);
+
+    updateObject();
+}
+
+void LayoutRTopSideFrontView::updateObject()
+{
+    bool swapside   = false;
+    const int LEFT = !swapside ? 1 : 0;
+
+    float width[m_pixmaps];
+    float height[m_pixmaps];
+
+    float space  = 10 * db->set.ppm * layoutItem->scale();
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+
+    float scale[m_pixmaps];
+    float rotation;
+    QRectF br;
+
+    for (int i = 0; i < m_pixmaps; i++) {
+        rotation = layoutItem->objectView()->rotation(i);
+        doClearTransform(i);
+        br = doRotationTransform(i, rotation);
+
+        width[i]    = br.width();
+        height[i]   = br.height();
+    }
+    for (int i = 0; i < m_pixmaps; i++) {
+        switch(i) {
+        case 0: scale[i] = 1; break;
+        case 1: scale[i] = height[0] / height[i]; break;
+        case 2: scale[i] = width[0]  / width[i]; break;
+        }
+    }
+    mainScale = mainScale / scale[m_mainScaleIndex];
+    for (int i = 0; i < m_pixmaps; i++) {
+        br = doScaleTransform(i, scale[i] * mainScale);
+
         width[i]    = br.width();
         height[i]   = br.height();
     }
@@ -309,8 +446,7 @@ LayoutTopView::LayoutTopView(LayoutItem *i) : LayoutView(i, 1)
 void LayoutTopView::updateObject()
 {
     int i = 0;
-    int mainScaleIndex = layoutItem->objectView()->scaleFrom();
-    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
     float scale;
     QRectF br;
