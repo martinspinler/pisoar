@@ -286,9 +286,11 @@ void Jaguar::images_setScaleFrom_clicked()
 }
 void Jaguar::onRulerDone(float scale)
 {
-    QMessageBox mb;
-    float ppm = db->set.ppm;
-    float sc = m_layoutItem->scale();
-    mb.setText(QString("Naměřená velikost: %1cm").arg(scale / ppm / sc / 10));
-    mb.exec();
+    if (m_layoutItem) {
+        QMessageBox mb;
+        float ppm = db->set.ppm;
+        float sc = m_layoutItem->scale();
+        mb.setText(QString("Naměřená velikost: %1cm").arg(scale / ppm / sc / 10));
+        mb.exec();
+    }
 }

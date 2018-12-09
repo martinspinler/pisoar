@@ -135,7 +135,7 @@ QRectF LayoutView::doRotationTransform(int i, int rotation)
 
 QRectF LayoutView::doScaleTransform(int i, float scale)
 {
-    float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
+    //float mainScale  = db->set.ppm / (layoutItem->objectView()->item.images[m_mainScaleIndex]->scale() / 10) * layoutItem->scale(); // pixels per mm
 
     QRectF br;
     QTransform tr;
