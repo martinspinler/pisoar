@@ -64,8 +64,8 @@ public:
     bool border()               {return layoutItem->border();}
     bool ruler()                {return layoutItem->ruler();}
 
-    void link(LayoutPage*page)  {layoutItem->link(page);}
-    void unlink(LayoutPage*page){layoutItem->unlink(page);}
+    /*void link(LayoutPage*page)  {layoutItem->link(page);}
+    void unlink(LayoutPage*page){layoutItem->unlink(page);}*/
 };
 
 class LayoutTopSideView: public LayoutView {

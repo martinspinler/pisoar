@@ -286,7 +286,7 @@ void Jaguar::images_setScaleFrom_clicked()
 }
 void Jaguar::onRulerDone(float scale)
 {
-    if (m_layoutItem) {
+    if(m_layoutItem) {
         QMessageBox mb;
         float ppm = db->set.ppm;
         float sc = m_layoutItem->scale();

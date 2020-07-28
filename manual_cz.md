@@ -7,7 +7,7 @@ Pomocí programu je jednoduše možné:
 * vytvořit databázi pojmenovaných objektů
 * přiřadit objektům různé pohledy získané z obrazových souborů
 * složit pohledy objektu do zobrazení v jednotném stylu
-* vyskládat a uspořádat zobrazení více objektů na plochu
+* vyskládat a uspořádat zobrazení více zobrazení objektů na plochu
 * zobrazit objekty na ploše v jednotném měřítku nezávisle na rozlišení fotografie
 * uložit zaplněné plochy jako obrazový soubor
 
@@ -66,6 +66,9 @@ Zvolený soubor lze označkovat pro lepší orientaci.
 V pravé horní části okna je prostor pro náhled pohledu objektu.
 Ten se zaplní při vybrání pohledu v hlavní části.
 
+Hned pod ním je posuvník, kterým je možné náhled rotovat.
+Nastavená rotace se použije při přiřazení pohledu k objektu.
+
 Pod náhledem pohledu je seznam objektů a ovládací prvky pro vytvoření objektu a základní práci se zvoleným objektem.
 V seznamu objektů je možné objekt přejmenovat (stisknutím klávesy F2, nebo pomalým dvojklikem).
 
@@ -84,6 +87,18 @@ Záložka slouží pro kontrolu a zobrazení objektu v jednotném stylu.
 Vlevo je seznam objektů s možností filtrace nebo seřazení seznamu podle názvu objektu.
 
 Na hlavní ploše se po vybrání objektu objeví jeho zobrazení v jednotném stylu.
+
+Vpravo nahoře je seznam všech variant zobrazení.
+Některé z nich ale mohou být pro aktuální objekt nedostupné (zašedlé a nelze je vybrat).
+Každé zobrazení totiž potřebuje určitý počet pohledů a pokud objekt nemá přiřazeno alespoň potřebný počet pohledů, zobrazení nelze použít.
+
+Vpravo dole je seznam pohledů objektu.
+V seznamu je možné:
+ * zaměnit pohled za jiný, pokud jich objekt obsahuje více (případně přeuspořádat v rámci zobrazení)
+ * rotovat jednotlivé pohledy o 90°
+ * určit pohled, ze kterého bude použito měřítko pro celé zobrazení
+
+Na hlavní ploše je kromě posuvu ještě možné přepnout do režimu Pravítko, pomocí kterého lze změřit určitou část zobrazení.
 
 ## Záložka "Výstup"
 

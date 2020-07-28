@@ -77,6 +77,11 @@ ObjectView::ObjectView(ObjectItem & item, QString name) : item(item)
 
     setIcon(f->icon_image);
 }
+ObjectView::~ObjectView()
+{
+    m_layoutItems.clear();
+}
+
 void ObjectView::setMapping(int index, int moveto)
 {
     if(moveto < 0 || moveto >= m_mapping.size())

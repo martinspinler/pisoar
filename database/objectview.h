@@ -23,6 +23,7 @@ public:
     ObjectView(ObjectItem & item, QString name);
     ObjectView(const QJsonObject & obj, ObjectItem & item);
     QJsonObject toJsonObject();
+    virtual ~ObjectView();
 
     int  type()                                 {return m_type;}
     void setType(int type)                      {m_type = type;}

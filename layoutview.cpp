@@ -232,8 +232,8 @@ void LayoutTopSideView::updateObject()
         height[i]   = br.height();
     }
 
-    pixitem[0].moveBy(childPadding + (!swapside ? width[LEFT] + space : 0), childPadding);
-    pixitem[1].moveBy(childPadding + ( swapside ? width[LEFT] + space : 0), childPadding);
+    pixitem[0].moveBy(childPadding + (!swapside ? (width[LEFT] + space) : 0), childPadding);
+    pixitem[1].moveBy(childPadding + ( swapside ? (width[LEFT] + space) : 0), childPadding);
 
     childHeight = height[0];
     childWidth  = width[0] + space + width[1];
@@ -292,8 +292,8 @@ void LayoutTopBottomView::updateObject()
         height[i]   = br.height();
     }
 
-    pixitem[0].moveBy(childPadding, childPadding + ( swapside ? height[TOP] + space : 0));
-    pixitem[1].moveBy(childPadding, childPadding + (!swapside ? height[TOP] + space : 0));
+    pixitem[0].moveBy(childPadding, childPadding + ( swapside ? (height[TOP] + space) : 0));
+    pixitem[1].moveBy(childPadding, childPadding + (!swapside ? (height[TOP] + space) : 0));
 
     childWidth  = width[0];
     childHeight = height[0] + space + height[1];
@@ -423,9 +423,9 @@ void LayoutRTopSideFrontView::updateObject()
         height[i]   = br.height();
     }
 
-    pixitem[0].moveBy(childPadding + (!swapside ? width[LEFT] + space : 0), childPadding + height[2] + space);
-    pixitem[1].moveBy(childPadding + ( swapside ? width[LEFT] + space : 0), childPadding + height[2] + space);
-    pixitem[2].moveBy(childPadding + (!swapside ? width[LEFT] + space : 0), childPadding);
+    pixitem[0].moveBy(childPadding + (!swapside ? (width[LEFT] + space) : 0), childPadding + height[2] + space);
+    pixitem[1].moveBy(childPadding + ( swapside ? (width[LEFT] + space) : 0), childPadding + height[2] + space);
+    pixitem[2].moveBy(childPadding + (!swapside ? (width[LEFT] + space) : 0), childPadding);
 
     childWidth  = width[0]  + space + width[1];
     childHeight = height[2] + space + height[1];
